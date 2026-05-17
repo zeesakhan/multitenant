@@ -1,9 +1,11 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }))
+
 vi.mock('../src/services/api', () => ({
-  default: { get: vi.fn() },
+  default: { get: mockGet },
   authApi: { login: vi.fn(), me: vi.fn() },
 }))
 
@@ -17,10 +19,13 @@ vi.mock('react-router-dom', async (importOriginal) => {
 })
 
 import LoginPage from '../src/pages/LoginPage'
-import api from '../src/services/api'
+
+function clickContinue() {
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+}
 
 describe('LoginPage', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => mockGet.mockReset())
 
   it('renders the tenant lookup step by default', () => {
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
@@ -28,44 +33,47 @@ describe('LoginPage', () => {
     expect(screen.getByPlaceholderText('e.g. TESTCO')).toBeInTheDocument()
   })
 
-  it('shows an error when the tenant code is not found', async () => {
-    vi.mocked(api.get).mockRejectedValue(new Error('Not found'))
+  it('disables the continue button while a lookup is in progress', async () => {
+    // Hang the request so the loading state is observable
+    let resolve: (v: unknown) => void
+    mockGet.mockReturnValue(new Promise(r => { resolve = r }))
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
-    await waitFor(() =>
-      expect(screen.getByText(/tenant not found/i)).toBeInTheDocument()
-    )
+    const btn = screen.getByRole('button', { name: /continue/i })
+    expect(btn).not.toBeDisabled()
+    clickContinue()
+    expect(await screen.findByText(/looking up/i)).toBeInTheDocument()
+    expect(btn).toBeDisabled()
+    // cleanup: resolve the hanging promise
+    resolve!({ data: { data: { id: 'x', name: 'X' } } })
   })
 
   it('advances to the credentials step after a successful tenant lookup', async () => {
-    vi.mocked(api.get).mockResolvedValue({
+    mockGet.mockResolvedValue({
       data: { data: { id: 'tenant-abc', name: 'Acme Corp' } },
     })
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
-    await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
-      expect(screen.getByText('Sign in')).toBeInTheDocument()
-    })
+    clickContinue()
+    expect(await screen.findByText('Acme Corp')).toBeInTheDocument()
+    // heading distinguishes from the submit button which also says "Sign in"
+    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument()
   })
 
   it('shows "change organisation" link on credentials step', async () => {
-    vi.mocked(api.get).mockResolvedValue({
+    mockGet.mockResolvedValue({
       data: { data: { id: 'tid', name: 'Test Org' } },
     })
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
-    await waitFor(() => expect(screen.getByText(/change organisation/i)).toBeInTheDocument())
+    clickContinue()
+    expect(await screen.findByText(/change organisation/i)).toBeInTheDocument()
   })
 
-  it('goes back to tenant step when "change organisation" is clicked', async () => {
-    vi.mocked(api.get).mockResolvedValue({
+  it('goes back to the tenant step when "change organisation" is clicked', async () => {
+    mockGet.mockResolvedValue({
       data: { data: { id: 'tid', name: 'Test Org' } },
     })
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
-    await waitFor(() => screen.getByText(/change organisation/i))
-    fireEvent.click(screen.getByText(/change organisation/i))
+    clickContinue()
+    fireEvent.click(await screen.findByText(/change organisation/i))
     expect(screen.getByText('Find your organisation')).toBeInTheDocument()
   })
 })

@@ -7,6 +7,12 @@ from app.schemas.auth import LoginRequest, TokenRefreshRequest
 from app.utils.formatters import api_response
 from app.utils.jwt_handler import decode, JWTDecodeError, JWTExpiredError
 from app.utils.rate_limit import check_rate_limit
+from app.utils.token_denylist import deny as deny_token, is_denied
+from app.utils.reset_tokens import create as create_reset_token, consume as consume_reset_token
+from app.schemas.auth import ForgotPasswordRequest, ResetPasswordRequest
+from app.models.user import User
+from app.services.user_service import hash_password
+from app.services.email_service import EmailService
 from config import get_settings
 
 settings = get_settings()
@@ -44,10 +50,12 @@ def refresh_token(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
         decoded = decode(payload.refresh_token, settings.secret_key)
         if decoded.get("type") != "refresh":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
-        from app.models.user import User
+        if is_denied(payload.refresh_token):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token already used.")
         user = db.query(User).filter(User.id == decoded["sub"]).first()
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
+        deny_token(payload.refresh_token, decoded["exp"])
         tokens = UserService(db).generate_tokens(user)
         return api_response(data=tokens, message="Token refreshed.")
     except (JWTDecodeError, JWTExpiredError):
@@ -57,6 +65,31 @@ def refresh_token(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
 @router.post("/logout", response_model=dict)
 def logout(current_user=Depends(get_current_user)):
     return api_response(message="Logged out successfully.")
+
+
+@router.post("/forgot-password", response_model=dict)
+def forgot_password(body: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    tenant_id = request.headers.get("X-Tenant-ID")
+    if tenant_id:
+        user = db.query(User).filter(User.tenant_id == tenant_id, User.email == body.email.lower()).first()
+        if user:
+            token = create_reset_token(user.id)
+            EmailService().notify_password_reset(user.email, user.full_name, token)
+    # Always 200 to prevent email enumeration
+    return api_response(message="If that email is registered, a reset link has been sent.")
+
+
+@router.post("/reset-password", response_model=dict)
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user_id = consume_reset_token(body.token)
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token.")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    user.password_hash = hash_password(body.new_password)
+    db.commit()
+    return api_response(message="Password reset successfully.")
 
 
 @router.get("/me", response_model=dict)

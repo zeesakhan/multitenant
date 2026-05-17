@@ -127,3 +127,25 @@ class EmailService:
         <p>Your policy will be issued shortly.</p>
         """
         return self.send(customer_email, subject, html)
+
+    def notify_password_reset(self, to_email: str, name: str, token: str) -> bool:
+        subject = "Reset your password"
+        # In production, replace with your actual frontend URL
+        reset_url = f"https://app.yourdomain.com/reset-password?token={token}"
+        html = f"""
+        <h2>Dear {name},</h2>
+        <p>We received a request to reset your password. Click the button below to choose a new one.</p>
+        <p style="margin:24px 0;">
+          <a href="{reset_url}"
+             style="background:#4F46E5;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">
+            Reset Password
+          </a>
+        </p>
+        <p style="color:#6B7280;font-size:13px;">
+          This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.
+        </p>
+        <p style="color:#6B7280;font-size:12px;">
+          Or copy this link: {reset_url}
+        </p>
+        """
+        return self.send(to_email, subject, html)
