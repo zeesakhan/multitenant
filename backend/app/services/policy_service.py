@@ -7,6 +7,7 @@ from app.schemas.policy import PolicyRead
 from app.constants.enums import ApplicationStatus, PolicyStatus
 from app.utils.formatters import generate_reference_number
 from app.services.audit_service import AuditService
+from app.services.email_service import EmailService
 from datetime import datetime, timezone, timedelta
 import uuid
 
@@ -83,6 +84,15 @@ class PolicyService:
             new_values={"policy_number": policy_number, "application_id": application_id},
         )
 
+        EmailService().notify_policy_issued(
+            customer_email=policy.customer_email,
+            customer_name=policy.customer_name,
+            policy_number=policy_number,
+            effective_date=effective_date.strftime("%B %d, %Y"),
+            expiry_date=expiry_date.strftime("%B %d, %Y"),
+            premium=str(policy.total_premium),
+        )
+
         return policy
 
     def get_by_id(self, tenant_id: str, policy_id: str) -> Policy:
@@ -138,6 +148,15 @@ class PolicyService:
         self.audit.log(tenant_id=tenant_id, action="renew", entity_type="policy",
                        entity_id=renewed.id, user_id=user_id,
                        new_values={"policy_number": new_number, "original_id": policy_id})
+
+        EmailService().notify_policy_renewal(
+            customer_email=renewed.customer_email,
+            customer_name=renewed.customer_name,
+            old_number=policy.policy_number,
+            new_number=new_number,
+            expiry_date=new_expiry.strftime("%B %d, %Y"),
+        )
+
         return renewed
 
     def list_policies(self, tenant_id: str, skip: int = 0, limit: int = 20) -> "tuple[list, int]":

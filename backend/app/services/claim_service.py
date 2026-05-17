@@ -6,6 +6,7 @@ from app.schemas.claim import ClaimCreate, ClaimUpdate, ClaimReview
 from app.constants.enums import ClaimStatus, PolicyStatus
 from app.utils.formatters import generate_reference_number
 from app.services.audit_service import AuditService
+from app.services.email_service import EmailService
 from datetime import datetime, timezone
 from typing import Optional, List, Tuple
 import uuid
@@ -42,6 +43,13 @@ class ClaimService:
         self.audit.log(tenant_id=tenant_id, action="create", entity_type="claim",
                        entity_id=claim.id, user_id=user_id,
                        new_values={"claim_number": claim.claim_number, "policy_id": data.policy_id})
+
+        EmailService().notify_claim_submitted(
+            customer_email=policy.customer_email,
+            customer_name=policy.customer_name,
+            claim_number=claim.claim_number,
+            claimed_amount=str(claim.claimed_amount),
+        )
         return claim
 
     def get(self, tenant_id: str, claim_id: str) -> Optional[Claim]:
@@ -100,6 +108,15 @@ class ClaimService:
         self.audit.log(tenant_id=tenant_id, action="approve", entity_type="claim",
                        entity_id=claim.id, user_id=user_id,
                        new_values={"approved_amount": str(claim.approved_amount)})
+
+        policy = self.db.query(Policy).filter(Policy.id == claim.policy_id).first()
+        if policy:
+            EmailService().notify_claim_approved(
+                customer_email=policy.customer_email,
+                customer_name=policy.customer_name,
+                claim_number=claim.claim_number,
+                approved_amount=str(claim.approved_amount),
+            )
         return claim
 
     def reject(self, tenant_id: str, claim_id: str, reason: str, user_id: str) -> Claim:
@@ -116,6 +133,15 @@ class ClaimService:
         self.audit.log(tenant_id=tenant_id, action="reject", entity_type="claim",
                        entity_id=claim.id, user_id=user_id,
                        new_values={"rejection_reason": reason})
+
+        policy = self.db.query(Policy).filter(Policy.id == claim.policy_id).first()
+        if policy:
+            EmailService().notify_claim_rejected(
+                customer_email=policy.customer_email,
+                customer_name=policy.customer_name,
+                claim_number=claim.claim_number,
+                reason=reason,
+            )
         return claim
 
     def mark_paid(self, tenant_id: str, claim_id: str, user_id: str) -> Claim:

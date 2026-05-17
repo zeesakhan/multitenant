@@ -11,6 +11,8 @@ import ApplicationsPage from './pages/ApplicationsPage'
 import PoliciesPage from './pages/PoliciesPage'
 import ClaimsPage from './pages/ClaimsPage'
 import ReportsPage from './pages/ReportsPage'
+import MembersPage from './pages/MembersPage'
+import PaymentsPage from './pages/PaymentsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -37,6 +39,8 @@ export default function App() {
                 <Route path="/policies" element={<PoliciesPage />} />
                 <Route path="/claims" element={<ClaimsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/members" element={<MembersPage />} />
+                <Route path="/payments" element={<PaymentsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

@@ -52,6 +52,12 @@ class MemberService:
         )
         return member
 
+    def list_all(self, tenant_id: str, skip: int = 0, limit: int = 20) -> "tuple[list, int]":
+        query = self.db.query(Member).filter(Member.tenant_id == tenant_id)
+        total = query.count()
+        members = query.order_by(Member.created_at.desc()).offset(skip).limit(limit).all()
+        return members, total
+
     def list_members(self, tenant_id: str, application_id: str) -> list[Member]:
         return self.db.query(Member).filter(
             and_(Member.tenant_id == tenant_id, Member.application_id == application_id)

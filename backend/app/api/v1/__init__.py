@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1 import auth, tenants, users, branding, products, quotations, applications, policies, members, payments, claims, workflows, documents, dashboard, reports
 from app.api.v1.users import roles_router
+from app.api.v1.members import members_router
 
 v1_router = APIRouter(prefix="/api/v1")
 
@@ -13,6 +14,7 @@ v1_router.include_router(products.router)
 v1_router.include_router(quotations.router)
 v1_router.include_router(applications.router)
 v1_router.include_router(members.router)
+v1_router.include_router(members_router)
 v1_router.include_router(policies.router)
 v1_router.include_router(payments.router)
 v1_router.include_router(claims.router)

@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Building2, Package,
   FileText, ClipboardList, ShieldCheck, AlertCircle, BarChart2, LogOut, Shield, ChevronRight,
+  CreditCard, UserCheck,
 } from 'lucide-react'
 import { clearAuth, useAuth } from '../store/authStore'
 import { authApi } from '../services/api'
@@ -15,7 +16,9 @@ const navItems = [
   { to: '/quotations', label: 'Quotations', icon: ClipboardList },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/policies', label: 'Policies', icon: ShieldCheck },
+  { to: '/members', label: 'Members', icon: UserCheck },
   { to: '/claims', label: 'Claims', icon: AlertCircle },
+  { to: '/payments', label: 'Payments', icon: CreditCard },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
 ]
 

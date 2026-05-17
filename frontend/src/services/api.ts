@@ -91,6 +91,7 @@ export const applicationsApi = {
 }
 
 export const membersApi = {
+  listAll: (page = 1) => api.get(`/members?page=${page}`),
   list: (applicationId: string) => api.get(`/applications/${applicationId}/members`),
   add: (applicationId: string, data: unknown) => api.post(`/applications/${applicationId}/members`, data),
   update: (applicationId: string, memberId: string, data: unknown) =>
