@@ -1,0 +1,141 @@
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: '/api/v1',
+  headers: { 'Content-Type': 'application/json' },
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  const tenantId = localStorage.getItem('tenantId')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (tenantId) config.headers['X-Tenant-ID'] = tenantId
+  return config
+})
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('tenantId')
+      window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  },
+)
+
+export default api
+
+export const authApi = {
+  login: (email: string, password: string) => {
+    const tenantId = localStorage.getItem('tenantId')
+    return api.post('/auth/login', { email, password }, {
+      headers: tenantId ? { 'X-Tenant-ID': tenantId } : {},
+    })
+  },
+  me: () => api.get('/auth/me'),
+  logout: () => api.post('/auth/logout'),
+}
+
+export const tenantsApi = {
+  list: (page = 1) => api.get(`/tenants?page=${page}`),
+  get: (id: string) => api.get(`/tenants/${id}`),
+  create: (data: unknown) => api.post('/tenants', data),
+  update: (id: string, data: unknown) => api.put(`/tenants/${id}`, data),
+}
+
+export const usersApi = {
+  list: (page = 1) => api.get(`/users?page=${page}`),
+  get: (id: string) => api.get(`/users/${id}`),
+  create: (data: unknown) => api.post('/users', data),
+  update: (id: string, data: unknown) => api.put(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+}
+
+export const productsApi = {
+  list: (page = 1) => api.get(`/products?page=${page}`),
+  get: (id: string) => api.get(`/products/${id}`),
+  create: (data: unknown) => api.post('/products', data),
+  update: (id: string, data: unknown) => api.put(`/products/${id}`, data),
+}
+
+export const plansApi = {
+  list: (productId: string, page = 1) => api.get(`/products/${productId}/plans?page=${page}`),
+  create: (productId: string, data: unknown) => api.post(`/products/${productId}/plans`, data),
+  update: (productId: string, planId: string, data: unknown) => api.put(`/products/${productId}/plans/${planId}`, data),
+  addCoverage: (productId: string, planId: string, data: unknown) =>
+    api.post(`/products/${productId}/plans/${planId}/coverages`, data),
+}
+
+export const quotationsApi = {
+  list: (page = 1) => api.get(`/quotations?page=${page}`),
+  get: (id: string) => api.get(`/quotations/${id}`),
+  create: (data: unknown) => api.post('/quotations', data),
+  send: (id: string, recipientEmail?: string) =>
+    api.post(`/quotations/${id}/send`, { recipient_email: recipientEmail ?? null }),
+}
+
+export const applicationsApi = {
+  list: (page = 1) => api.get(`/applications?page=${page}`),
+  get: (id: string) => api.get(`/applications/${id}`),
+  create: (data: unknown) => api.post('/applications', data),
+  submit: (id: string) => api.post(`/applications/${id}/submit`, {}),
+  approve: (id: string) => api.post(`/applications/${id}/approve`, {}),
+  reject: (id: string, reason: string) =>
+    api.post(`/applications/${id}/reject`, { reason }),
+  listItems: (id: string) => api.get(`/applications/${id}/items`),
+  addItem: (id: string, data: unknown) => api.post(`/applications/${id}/items`, data),
+  removeItem: (appId: string, itemId: string) => api.delete(`/applications/${appId}/items/${itemId}`),
+  issue: (id: string) => api.post(`/applications/${id}/issue`, {}),
+}
+
+export const membersApi = {
+  list: (applicationId: string) => api.get(`/applications/${applicationId}/members`),
+  add: (applicationId: string, data: unknown) => api.post(`/applications/${applicationId}/members`, data),
+  update: (applicationId: string, memberId: string, data: unknown) =>
+    api.put(`/applications/${applicationId}/members/${memberId}`, data),
+  remove: (applicationId: string, memberId: string) =>
+    api.delete(`/applications/${applicationId}/members/${memberId}`),
+}
+
+export const policiesApi = {
+  list: (page = 1) => api.get(`/policies?page=${page}`),
+  get: (id: string) => api.get(`/policies/${id}`),
+  renew: (id: string) => api.post(`/policies/${id}/renew`, {}),
+  generateDocument: (id: string) => api.post(`/policies/${id}/generate-document`, {}),
+  listDocuments: (id: string) => api.get(`/policies/${id}/documents`),
+  downloadDocumentUrl: (policyId: string, docId: string) => `/api/v1/policies/${policyId}/documents/${docId}/download`,
+}
+
+export const paymentsApi = {
+  listByPolicy: (policyId: string) => api.get(`/policies/${policyId}/payments`),
+  record: (policyId: string, data: unknown) => api.post(`/policies/${policyId}/payments`, data),
+  listAll: (page = 1) => api.get(`/payments?page=${page}`),
+}
+
+export const dashboardApi = {
+  stats: () => api.get('/dashboard/stats'),
+}
+
+export const claimsApi = {
+  list: (page = 1) => api.get(`/claims?page=${page}`),
+  get: (id: string) => api.get(`/claims/${id}`),
+  create: (data: unknown) => api.post('/claims', data),
+  update: (id: string, data: unknown) => api.put(`/claims/${id}`, data),
+  startReview: (id: string) => api.post(`/claims/${id}/review`, {}),
+  approve: (id: string, data: unknown) => api.post(`/claims/${id}/approve`, data),
+  reject: (id: string, reason: string) => api.post(`/claims/${id}/reject`, { reason }),
+  pay: (id: string) => api.post(`/claims/${id}/pay`, {}),
+}
+
+export const reportsApi = {
+  summary: () => api.get('/reports/summary'),
+  applications: (months = 6) => api.get(`/reports/applications?months=${months}`),
+  premium: (months = 6) => api.get(`/reports/premium?months=${months}`),
+  claims: (months = 6) => api.get(`/reports/claims?months=${months}`),
+}
+
+export const healthApi = {
+  check: () => axios.get('/health'),
+}

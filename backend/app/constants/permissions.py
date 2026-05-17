@@ -1,0 +1,171 @@
+"""Permission codes used throughout the RBAC system."""
+
+# Tenant Management
+TENANT_CREATE = "tenant.create"
+TENANT_READ = "tenant.read"
+TENANT_UPDATE = "tenant.update"
+TENANT_DELETE = "tenant.delete"
+TENANT_CONFIG_UPDATE = "tenant.config.update"
+
+# Branding
+BRANDING_READ = "branding.read"
+BRANDING_UPDATE = "branding.update"
+
+# Users
+USER_CREATE = "user.create"
+USER_READ = "user.read"
+USER_UPDATE = "user.update"
+USER_DELETE = "user.delete"
+USER_ROLE_ASSIGN = "user.role.assign"
+
+# Roles & Permissions
+ROLE_CREATE = "role.create"
+ROLE_READ = "role.read"
+ROLE_UPDATE = "role.update"
+ROLE_DELETE = "role.delete"
+PERMISSION_READ = "permission.read"
+
+# Products
+PRODUCT_CREATE = "product.create"
+PRODUCT_READ = "product.read"
+PRODUCT_UPDATE = "product.update"
+PRODUCT_DELETE = "product.delete"
+PLAN_CREATE = "plan.create"
+PLAN_READ = "plan.read"
+PLAN_UPDATE = "plan.update"
+RATE_CARD_CREATE = "rate_card.create"
+RATE_CARD_READ = "rate_card.read"
+RATE_CARD_UPDATE = "rate_card.update"
+
+# Quotations
+QUOTATION_CREATE = "quotation.create"
+QUOTATION_READ = "quotation.read"
+QUOTATION_UPDATE = "quotation.update"
+QUOTATION_SEND = "quotation.send"
+QUOTATION_CONVERT = "quotation.convert"
+QUOTATION_READ_ALL = "quotation.read.all"
+
+# Applications
+APPLICATION_CREATE = "application.create"
+APPLICATION_READ = "application.read"
+APPLICATION_UPDATE = "application.update"
+APPLICATION_SUBMIT = "application.submit"
+APPLICATION_APPROVE = "application.approve"
+APPLICATION_REJECT = "application.reject"
+APPLICATION_READ_ALL = "application.read.all"
+
+# Policies
+POLICY_READ = "policy.read"
+POLICY_AMEND = "policy.amend"
+POLICY_CANCEL = "policy.cancel"
+POLICY_RENEW = "policy.renew"
+POLICY_READ_ALL = "policy.read.all"
+POLICY_ISSUE = "policy.issue"
+
+# Members
+MEMBER_CREATE = "member.create"
+MEMBER_READ = "member.read"
+MEMBER_UPDATE = "member.update"
+MEMBER_DELETE = "member.delete"
+
+# Claims
+CLAIM_CREATE = "claim.create"
+CLAIM_READ = "claim.read"
+CLAIM_UPDATE = "claim.update"
+CLAIM_APPROVE = "claim.approve"
+CLAIM_REJECT = "claim.reject"
+CLAIM_READ_ALL = "claim.read.all"
+CLAIM_PAY = "claim.pay"
+
+# Payments
+PAYMENT_CREATE = "payment.create"
+PAYMENT_READ = "payment.read"
+PAYMENT_REFUND = "payment.refund"
+PAYMENT_READ_ALL = "payment.read.all"
+INVOICE_READ = "invoice.read"
+INVOICE_SEND = "invoice.send"
+
+# Documents
+DOCUMENT_CREATE = "document.create"
+DOCUMENT_READ = "document.read"
+DOCUMENT_DOWNLOAD = "document.download"
+DOCUMENT_TEMPLATE_MANAGE = "document.template.manage"
+
+# Integrations
+INTEGRATION_READ = "integration.read"
+INTEGRATION_MANAGE = "integration.manage"
+INTEGRATION_SYNC = "integration.sync"
+
+# Workflows
+WORKFLOW_READ = "workflow.read"
+WORKFLOW_MANAGE = "workflow.manage"
+
+# Configuration
+CONFIG_READ = "config.read"
+CONFIG_UPDATE = "config.update"
+FEATURE_FLAG_UPDATE = "config.feature.update"
+
+# Reporting
+REPORT_READ = "report.read"
+REPORT_GENERATE = "report.generate"
+DASHBOARD_READ = "dashboard.read"
+
+# Audit Logs
+AUDIT_LOG_READ = "audit.read"
+AUDIT_LOG_EXPORT = "audit.export"
+
+
+# Role presets (sets of permissions per default role type)
+ROLE_PERMISSIONS = {
+    "super_admin": [
+        TENANT_CREATE, TENANT_READ, TENANT_UPDATE, TENANT_DELETE, TENANT_CONFIG_UPDATE,
+        USER_CREATE, USER_READ, USER_UPDATE, USER_DELETE, USER_ROLE_ASSIGN,
+        ROLE_CREATE, ROLE_READ, ROLE_UPDATE, ROLE_DELETE,
+        AUDIT_LOG_READ, AUDIT_LOG_EXPORT,
+    ],
+    "tenant_admin": [
+        BRANDING_READ, BRANDING_UPDATE,
+        USER_CREATE, USER_READ, USER_UPDATE, USER_DELETE, USER_ROLE_ASSIGN,
+        ROLE_CREATE, ROLE_READ, ROLE_UPDATE,
+        PRODUCT_CREATE, PRODUCT_READ, PRODUCT_UPDATE, PLAN_CREATE, PLAN_READ, PLAN_UPDATE,
+        RATE_CARD_CREATE, RATE_CARD_READ, RATE_CARD_UPDATE,
+        QUOTATION_CREATE, QUOTATION_READ, QUOTATION_READ_ALL, QUOTATION_SEND,
+        APPLICATION_CREATE, APPLICATION_READ, APPLICATION_UPDATE, APPLICATION_READ_ALL, APPLICATION_SUBMIT, APPLICATION_APPROVE, APPLICATION_REJECT,
+        MEMBER_CREATE, MEMBER_READ, MEMBER_UPDATE, MEMBER_DELETE,
+        POLICY_READ, POLICY_READ_ALL, POLICY_ISSUE, POLICY_AMEND, POLICY_CANCEL, POLICY_RENEW,
+        PAYMENT_CREATE, PAYMENT_READ, PAYMENT_READ_ALL,
+        CLAIM_CREATE, CLAIM_READ, CLAIM_READ_ALL, CLAIM_UPDATE, CLAIM_APPROVE, CLAIM_REJECT, CLAIM_PAY,
+        DOCUMENT_CREATE, DOCUMENT_READ, DOCUMENT_DOWNLOAD, DOCUMENT_TEMPLATE_MANAGE,
+        INTEGRATION_READ, INTEGRATION_MANAGE, INTEGRATION_SYNC,
+        WORKFLOW_READ, WORKFLOW_MANAGE,
+        CONFIG_READ, CONFIG_UPDATE, FEATURE_FLAG_UPDATE,
+        REPORT_READ, REPORT_GENERATE, DASHBOARD_READ,
+        AUDIT_LOG_READ,
+    ],
+    "agent": [
+        QUOTATION_CREATE, QUOTATION_READ, QUOTATION_UPDATE, QUOTATION_SEND, QUOTATION_CONVERT,
+        APPLICATION_CREATE, APPLICATION_READ, APPLICATION_UPDATE, APPLICATION_SUBMIT,
+        MEMBER_CREATE, MEMBER_READ, MEMBER_UPDATE, MEMBER_DELETE,
+        POLICY_READ, POLICY_RENEW,
+        PAYMENT_CREATE, PAYMENT_READ, INVOICE_READ,
+        CLAIM_CREATE, CLAIM_READ, CLAIM_UPDATE,
+        DOCUMENT_READ, DOCUMENT_DOWNLOAD,
+        PRODUCT_READ, PLAN_READ,
+        DASHBOARD_READ, REPORT_READ,
+    ],
+    "underwriter": [
+        APPLICATION_READ_ALL, APPLICATION_APPROVE, APPLICATION_REJECT,
+        POLICY_READ_ALL, POLICY_ISSUE,
+        DOCUMENT_READ, DOCUMENT_DOWNLOAD,
+        MEMBER_READ,
+        AUDIT_LOG_READ,
+    ],
+    "customer": [
+        QUOTATION_READ,
+        POLICY_READ, POLICY_RENEW,
+        MEMBER_READ,
+        PAYMENT_CREATE, PAYMENT_READ, INVOICE_READ,
+        DOCUMENT_READ, DOCUMENT_DOWNLOAD,
+        DASHBOARD_READ,
+    ],
+}
