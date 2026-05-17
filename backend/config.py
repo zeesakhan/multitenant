@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-import os
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -40,6 +40,16 @@ class Settings(BaseSettings):
 
     # Encryption
     encryption_key: str = "your-encryption-key-change-in-production"
+
+    # Email / SMTP (leave SMTP_HOST empty to use dev-mode logging instead of sending)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    email_from: str = "noreply@healthinsurance.local"
+
+    # Rate limiting (login attempts per minute per IP)
+    login_rate_limit: int = 10
 
     # Feature flags
     enable_claims: bool = False

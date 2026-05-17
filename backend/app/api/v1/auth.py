@@ -6,6 +6,7 @@ from app.services.tenant_service import TenantService
 from app.schemas.auth import LoginRequest, TokenRefreshRequest
 from app.utils.formatters import api_response
 from app.utils.jwt_handler import decode, JWTDecodeError, JWTExpiredError
+from app.utils.rate_limit import check_rate_limit
 from config import get_settings
 
 settings = get_settings()
@@ -23,6 +24,12 @@ def resolve_tenant(code: str, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=dict)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(f"login:{client_ip}", settings.login_rate_limit):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login attempts. Please try again later.",
+        )
     tenant_id = getattr(request.state, "tenant_id", None) or request.headers.get("X-Tenant-ID")
     if not tenant_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tenant context required. Provide X-Tenant-ID header.")
