@@ -19,6 +19,9 @@ import PaymentsPage from './pages/PaymentsPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
+import BuyLandingPage from './pages/buy/BuyLandingPage'
+import BuyProductsPage from './pages/buy/BuyProductsPage'
+import BuyApplyPage from './pages/buy/BuyApplyPage'
 import PortalLoginPage from './pages/portal/PortalLoginPage'
 import PortalRegisterPage from './pages/portal/PortalRegisterPage'
 import PortalDashboardPage from './pages/portal/PortalDashboardPage'
@@ -70,6 +73,11 @@ export default function App() {
           </PrivateRoute>
         }
       />
+
+      {/* Self-service purchase */}
+      <Route path="/buy" element={<BuyLandingPage />} />
+      <Route path="/buy/products" element={<BuyProductsPage />} />
+      <Route path="/buy/apply" element={<BuyApplyPage />} />
 
       {/* Customer portal */}
       <Route path="/portal/login" element={<PortalLoginPage />} />
