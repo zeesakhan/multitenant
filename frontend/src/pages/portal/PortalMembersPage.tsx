@@ -2,27 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { User, Users } from 'lucide-react'
 import { portalCustomerApi } from '../../services/portalApi'
 
-const RELATIONSHIP_LABELS: Record<string, string> = {
-  self: 'Primary Insured', spouse: 'Spouse', child: 'Child',
-  parent: 'Parent', sibling: 'Sibling', dependent: 'Dependent',
-}
-
-const RELATIONSHIP_COLORS: Record<string, string> = {
-  self: 'bg-emerald-100 text-emerald-700',
-  spouse: 'bg-blue-100 text-blue-700',
-  child: 'bg-violet-100 text-violet-700',
-  parent: 'bg-amber-100 text-amber-700',
-  sibling: 'bg-pink-100 text-pink-700',
-  dependent: 'bg-gray-100 text-gray-600',
-}
-
-const GENDER_LABELS: Record<string, string> = { M: 'Male', F: 'Female', O: 'Other', U: 'Undisclosed' }
-
-function age(dob: string) {
-  const diff = Date.now() - new Date(dob).getTime()
-  return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25))
-}
-
 export default function PortalMembersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['portal-members'],

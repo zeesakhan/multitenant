@@ -42,10 +42,12 @@ export default function PortalLoginPage() {
     try {
       const res = await portalAuthApi.login(email, password, tenantId)
       const { access_token } = res.data.data
-      // Fetch customer profile
+      // Set token in localStorage so the interceptor includes it in the /me request
+      localStorage.setItem('portal_token', access_token)
       const meRes = await portalAuthApi.me()
       const user = meRes.data.data
       if (user.user_type !== 'customer') {
+        localStorage.removeItem('portal_token')
         setError('This portal is for policyholders only. Please use the staff portal.')
         setLoading(false)
         return
@@ -53,6 +55,7 @@ export default function PortalLoginPage() {
       setPortalAuth(access_token, tenantId, user)
       navigate('/portal/dashboard')
     } catch (err: unknown) {
+      localStorage.removeItem('portal_token')
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(msg ?? 'Invalid email or password.')
     } finally {

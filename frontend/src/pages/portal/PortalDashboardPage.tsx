@@ -132,7 +132,7 @@ export default function PortalDashboardPage() {
                     <p className="text-sm font-semibold text-gray-800">${fmt(String(p.amount))}</p>
                     <p className="text-xs text-gray-400">{METHOD_LABELS[String(p.method)] ?? String(p.method)}</p>
                   </div>
-                  <p className="text-xs text-gray-400">{new Date(String(p.paid_at)).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400">{p.paid_at ? new Date(String(p.paid_at)).toLocaleDateString() : '—'}</p>
                 </div>
               ))}
             </div>}

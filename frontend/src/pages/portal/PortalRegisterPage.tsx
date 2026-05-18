@@ -71,11 +71,14 @@ export default function PortalRegisterPage() {
         date_of_birth: dateOfBirth,
       }, tenantId)
       const { access_token } = res.data.data
+      // Set token in localStorage so the interceptor includes it in the /me request
+      localStorage.setItem('portal_token', access_token)
       const meRes = await portalAuthApi.me()
       const user = meRes.data.data
       setPortalAuth(access_token, tenantId, user)
       navigate('/portal/dashboard')
     } catch (err: unknown) {
+      localStorage.removeItem('portal_token')
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(msg ?? 'Registration failed. Please try again.')
     } finally {
