@@ -195,14 +195,45 @@ class DocumentService:
         document_id: str,
         user_id: str,
     ) -> DocumentUpload:
-        """Validate a document (placeholder for actual validation logic)."""
+        """Validate a document against its template's MIME-type and size constraints."""
         document = self.get_document(tenant_id, document_id)
         if not document:
             raise ValueError(f"Document {document_id} not found")
 
-        # Placeholder validation - in real implementation would do OCR, content checks, etc.
-        document.validation_status = "valid"
-        document.validation_errors = None
+        errors: list[str] = []
+
+        # Fetch the template for this document type if one exists
+        from app.models.document import DocumentTemplate
+        template = (
+            self.db.query(DocumentTemplate)
+            .filter(
+                DocumentTemplate.tenant_id == tenant_id,
+                DocumentTemplate.template_type == document.document_type,
+            )
+            .first()
+        )
+
+        if template:
+            # MIME-type check
+            if template.mime_types and document.mime_type not in template.mime_types:
+                errors.append(
+                    f"File type '{document.mime_type}' is not allowed. "
+                    f"Accepted types: {', '.join(template.mime_types)}"
+                )
+            # File-size check (template stores limit in KB)
+            max_bytes = template.max_size_kb * 1024
+            if document.file_size > max_bytes:
+                errors.append(
+                    f"File size {document.file_size} bytes exceeds the "
+                    f"{template.max_size_kb} KB limit."
+                )
+
+        if errors:
+            document.validation_status = "invalid"
+            document.validation_errors = {"errors": errors}
+        else:
+            document.validation_status = "valid"
+            document.validation_errors = None
 
         self.db.flush()
 

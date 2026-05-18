@@ -7,6 +7,7 @@ import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Claim, Policy } from '../types'
 
 const CLAIM_TYPES = [
@@ -48,6 +49,7 @@ function errMsg(err: unknown) {
 
 function NewClaimModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     policy_id: '', claim_type: 'hospitalization', incident_date: '',
     description: '', claimed_amount: '',
@@ -72,6 +74,7 @@ function NewClaimModal({ open, onClose }: { open: boolean; onClose: () => void }
       onClose()
       setForm({ policy_id: '', claim_type: 'hospitalization', incident_date: '', description: '', claimed_amount: '' })
       setError('')
+      toast('Claim filed successfully.')
     },
     onError: (err: unknown) => setError(errMsg(err)),
   })
@@ -132,6 +135,7 @@ function NewClaimModal({ open, onClose }: { open: boolean; onClose: () => void }
 
 function ClaimDetailModal({ claimId, onClose }: { claimId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [approvedAmount, setApprovedAmount] = useState('')
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
@@ -151,24 +155,24 @@ function ClaimDetailModal({ claimId, onClose }: { claimId: string; onClose: () =
 
   const reviewMut = useMutation({
     mutationFn: () => claimsApi.startReview(claimId),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast('Review started.', 'info') },
     onError: (err: unknown) => setError(errMsg(err)),
   })
   const approveMut = useMutation({
     mutationFn: () => claimsApi.approve(claimId, {
       approved_amount: approvedAmount ? parseFloat(approvedAmount) : null,
     }),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast('Claim approved.') },
     onError: (err: unknown) => setError(errMsg(err)),
   })
   const rejectMut = useMutation({
     mutationFn: () => claimsApi.reject(claimId, rejectReason),
-    onSuccess: () => { invalidate(); onClose() },
+    onSuccess: () => { invalidate(); onClose(); toast('Claim rejected.', 'info') },
     onError: (err: unknown) => setError(errMsg(err)),
   })
   const payMut = useMutation({
     mutationFn: () => claimsApi.pay(claimId),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast('Payment recorded.') },
     onError: (err: unknown) => setError(errMsg(err)),
   })
 

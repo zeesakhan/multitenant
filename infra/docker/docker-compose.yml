@@ -48,6 +48,22 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  worker:
+    build:
+      context: ../../backend
+    command: celery -A app.worker worker --loglevel=info --concurrency=2
+    env_file: ../../backend/.env
+    environment:
+      DATABASE_URL: postgresql://app:secret123@db:5432/health_insurance
+      REDIS_URL: redis://redis:6379/0
+      DEBUG: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ../../frontend

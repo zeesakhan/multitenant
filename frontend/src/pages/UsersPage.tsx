@@ -7,12 +7,14 @@ import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { User } from '../types'
 
 const USER_TYPES = ['agent', 'broker', 'customer', 'underwriter', 'claims_manager', 'tenant_admin']
 
 function AddUserModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '',
     password: '', user_type: 'agent', phone: '',
@@ -23,6 +25,7 @@ function AddUserModal({ open, onClose }: { open: boolean; onClose: () => void })
     mutationFn: () => usersApi.create(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast('User created.')
       onClose()
       setForm({ first_name: '', last_name: '', email: '', password: '', user_type: 'agent', phone: '' })
       setError('')
@@ -86,6 +89,7 @@ function AddUserModal({ open, onClose }: { open: boolean; onClose: () => void })
 
 function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     first_name: user.first_name, last_name: user.last_name,
     user_type: user.user_type, status: user.status,
@@ -96,6 +100,7 @@ function EditUserModal({ user, onClose }: { user: User; onClose: () => void }) {
     mutationFn: () => usersApi.update(user.id, form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast('User updated.')
       onClose()
     },
     onError: (err: unknown) => {

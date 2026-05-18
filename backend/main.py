@@ -32,12 +32,22 @@ async def lifespan(app: FastAPI):
     yield
 
 
+_INSECURE_DEFAULTS = {
+    "your-secret-key-change-in-production",
+    "your-encryption-key-change-in-production",
+}
+if not settings.debug:
+    if settings.secret_key in _INSECURE_DEFAULTS:
+        raise RuntimeError("SECRET_KEY must be changed before running in production.")
+    if settings.encryption_key in _INSECURE_DEFAULTS:
+        raise RuntimeError("ENCRYPTION_KEY must be changed before running in production.")
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    openapi_url="/openapi.json" if settings.debug else None,
     lifespan=lifespan,
 )
 

@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Policy, Payment } from '../types'
 
 const METHOD_OPTIONS = [
@@ -57,6 +58,7 @@ function RecordPaymentModal({ open, onClose, policyId, defaultAmount }: {
   open: boolean; onClose: () => void; policyId: string; defaultAmount: string
 }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({ amount: defaultAmount, method: 'bank_transfer', reference: '', notes: '' })
   const [error, setError] = useState('')
 
@@ -70,6 +72,7 @@ function RecordPaymentModal({ open, onClose, policyId, defaultAmount }: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policy-payments', policyId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      toast('Payment recorded.')
       onClose()
       setForm({ amount: defaultAmount, method: 'bank_transfer', reference: '', notes: '' })
       setError('')
@@ -123,6 +126,7 @@ function RecordPaymentModal({ open, onClose, policyId, defaultAmount }: {
 
 function PolicyDetailModal({ policyId, onClose }: { policyId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [showPayment, setShowPayment] = useState(false)
   const [docError, setDocError] = useState('')
   const [renewError, setRenewError] = useState('')
@@ -151,6 +155,7 @@ function PolicyDetailModal({ policyId, onClose }: { policyId: string; onClose: (
     mutationFn: () => policiesApi.generateDocument(policyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policy-documents', policyId] })
+      toast('Document generated.', 'info')
       setDocError('')
     },
     onError: (err: unknown) => {
@@ -165,6 +170,7 @@ function PolicyDetailModal({ policyId, onClose }: { policyId: string; onClose: (
       queryClient.invalidateQueries({ queryKey: ['policies'] })
       queryClient.invalidateQueries({ queryKey: ['policy', policyId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      toast('Policy renewed.')
       setRenewError('')
       onClose()
     },

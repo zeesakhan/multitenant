@@ -14,6 +14,8 @@ import ClaimsPage from './pages/ClaimsPage'
 import ReportsPage from './pages/ReportsPage'
 import MembersPage from './pages/MembersPage'
 import PaymentsPage from './pages/PaymentsPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -26,6 +28,8 @@ export default function App() {
     <ToastProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/*"
         element={

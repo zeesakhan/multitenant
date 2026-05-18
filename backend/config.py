@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list = ["http://localhost:3000", "http://localhost:5173"]
     cors_credentials: bool = True
-    cors_methods: list = ["*"]
-    cors_headers: list = ["*"]
+    cors_methods: list = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    cors_headers: list = ["Authorization", "Content-Type", "X-Tenant-ID", "Accept"]
 
     # Celery
     celery_broker_url: str = "amqp://user:password@localhost:5672/"
@@ -48,11 +48,14 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     email_from: str = "noreply@healthinsurance.local"
 
+    # Frontend URL (used in password-reset emails)
+    frontend_url: str = "http://localhost:5173"
+
     # Rate limiting (login attempts per minute per IP)
     login_rate_limit: int = 10
 
     # Feature flags
-    enable_claims: bool = False
+    enable_claims: bool = True
     enable_government_integration: bool = False
     enable_batch_processing: bool = False
 

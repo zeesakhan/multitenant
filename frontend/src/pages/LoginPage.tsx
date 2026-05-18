@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Shield, Search } from 'lucide-react'
 import api, { authApi } from '../services/api'
 import { setAuth } from '../store/authStore'
@@ -147,6 +147,11 @@ export default function LoginPage() {
                 <button type="submit" className="btn-primary w-full justify-center py-2.5" disabled={loading}>
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
+                <div className="text-center">
+                  <Link to="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
+                    Forgot password?
+                  </Link>
+                </div>
               </form>
               <p className="mt-4 text-center text-xs text-gray-400">
                 TESTCO: admin@testco.com / admin123<br />

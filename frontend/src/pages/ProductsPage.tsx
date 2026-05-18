@@ -7,6 +7,7 @@ import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Product, Plan } from '../types'
 
 const PLAN_TYPES = ['individual', 'family', 'group', 'senior']
@@ -36,6 +37,7 @@ function errMsg(err: unknown) {
 
 function AddProductModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({ name: '', code: '', description: '', status: 'draft' })
   const [error, setError] = useState('')
 
@@ -43,6 +45,7 @@ function AddProductModal({ open, onClose }: { open: boolean; onClose: () => void
     mutationFn: () => productsApi.create(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast('Product created.')
       onClose()
       setForm({ name: '', code: '', description: '', status: 'draft' })
       setError('')
@@ -96,6 +99,7 @@ function AddProductModal({ open, onClose }: { open: boolean; onClose: () => void
 
 function AddPlanModal({ open, onClose, productId }: { open: boolean; onClose: () => void; productId: string }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     name: '', code: '', plan_type: 'individual', base_premium: '', description: '', is_active: true,
   })
@@ -109,6 +113,7 @@ function AddPlanModal({ open, onClose, productId }: { open: boolean; onClose: ()
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans', productId] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast('Plan created.')
       onClose()
       setForm({ name: '', code: '', plan_type: 'individual', base_premium: '', description: '', is_active: true })
       setError('')
@@ -182,6 +187,7 @@ function AddCoverageModal({ open, onClose, productId, planId, planName }: {
   open: boolean; onClose: () => void; productId: string; planId: string; planName: string
 }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     name: '', coverage_type: 'hospitalization', limit_amount: '', copay: '', coinsurance_percent: '',
   })
@@ -197,6 +203,7 @@ function AddCoverageModal({ open, onClose, productId, planId, planName }: {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans', productId] })
+      toast('Coverage added.')
       onClose()
       setForm({ name: '', coverage_type: 'hospitalization', limit_amount: '', copay: '', coinsurance_percent: '' })
       setError('')

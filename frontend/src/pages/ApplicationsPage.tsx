@@ -7,6 +7,7 @@ import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Product, Plan, ApplicationItem, Member } from '../types'
 
 const RELATIONSHIPS = ['self', 'spouse', 'child', 'parent', 'sibling', 'dependent']
@@ -63,6 +64,7 @@ interface AppRow {
 
 function NewApplicationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     product_id: '', plan_id: '', customer_name: '', customer_email: '', member_count: 1,
   })
@@ -87,6 +89,7 @@ function NewApplicationModal({ open, onClose }: { open: boolean; onClose: () => 
     mutationFn: () => applicationsApi.create(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      toast('Application created.')
       onClose()
       setForm({ product_id: '', plan_id: '', customer_name: '', customer_email: '', member_count: 1 })
       setError('')
@@ -174,6 +177,7 @@ function AddItemModal({ open, onClose, appId, planId, productId }: {
   open: boolean; onClose: () => void; appId: string; planId: string; productId: string
 }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [coverageId, setCoverageId] = useState('')
   const [premium, setPremium] = useState('')
   const [notes, setNotes] = useState('')
@@ -196,6 +200,7 @@ function AddItemModal({ open, onClose, appId, planId, productId }: {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', appId] })
+      toast('Coverage item added.')
       onClose()
       setCoverageId(''); setPremium(''); setNotes(''); setError('')
     },
@@ -250,6 +255,7 @@ function AddItemModal({ open, onClose, appId, planId, productId }: {
 
 function AddMemberModal({ open, onClose, appId }: { open: boolean; onClose: () => void; appId: string }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     first_name: '', last_name: '', date_of_birth: '',
     relationship: 'self', gender: 'M', email: '', phone: '',
@@ -264,6 +270,7 @@ function AddMemberModal({ open, onClose, appId }: { open: boolean; onClose: () =
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['application', appId] })
+      toast('Member added.')
       onClose()
       setForm({ first_name: '', last_name: '', date_of_birth: '', relationship: 'self', gender: 'M', email: '', phone: '' })
       setError('')
@@ -333,6 +340,7 @@ function AddMemberModal({ open, onClose, appId }: { open: boolean; onClose: () =
 
 function ApplicationDetailModal({ appId, onClose }: { appId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
@@ -353,17 +361,17 @@ function ApplicationDetailModal({ appId, onClose }: { appId: string; onClose: ()
 
   const submitMut = useMutation({
     mutationFn: () => applicationsApi.submit(appId),
-    onSuccess: () => { invalidate() },
+    onSuccess: () => { invalidate(); toast('Application submitted.', 'info') },
     onError: (err: unknown) => { setError(errMsg(err)) },
   })
   const approveMut = useMutation({
     mutationFn: () => applicationsApi.approve(appId),
-    onSuccess: () => { invalidate() },
+    onSuccess: () => { invalidate(); toast('Application approved.') },
     onError: (err: unknown) => { setError(errMsg(err)) },
   })
   const rejectMut = useMutation({
     mutationFn: () => applicationsApi.reject(appId, rejectReason),
-    onSuccess: () => { invalidate(); onClose() },
+    onSuccess: () => { invalidate(); toast('Application rejected.', 'info'); onClose() },
     onError: (err: unknown) => { setError(errMsg(err)) },
   })
   const removeMut = useMutation({
@@ -381,6 +389,7 @@ function ApplicationDetailModal({ appId, onClose }: { appId: string; onClose: ()
     onSuccess: () => {
       invalidate()
       queryClient.invalidateQueries({ queryKey: ['policies'] })
+      toast('Policy issued successfully.')
     },
     onError: (err: unknown) => { setError(errMsg(err)) },
   })

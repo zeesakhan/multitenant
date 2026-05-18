@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Quote, Product, Plan } from '../types'
 
 const STATUS_TABS = ['all', 'draft', 'sent', 'viewed', 'expired', 'converted', 'declined'] as const
@@ -40,6 +41,7 @@ function errMsg(err: unknown) {
 
 function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     product_id: '', plan_id: '', customer_name: '', customer_email: '',
   })
@@ -65,6 +67,7 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
     mutationFn: () => quotationsApi.create(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] })
+      toast('Quote created.')
       onClose()
       setForm({ product_id: '', plan_id: '', customer_name: '', customer_email: '' })
       setError('')
@@ -165,6 +168,7 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
 
 function QuoteDetailModal({ quoteId, onClose }: { quoteId: string; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [error, setError] = useState('')
   const [sendEmail, setSendEmail] = useState('')
   const [showSendForm, setShowSendForm] = useState(false)
@@ -181,6 +185,7 @@ function QuoteDetailModal({ quoteId, onClose }: { quoteId: string; onClose: () =
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] })
       queryClient.invalidateQueries({ queryKey: ['quote', quoteId] })
+      toast('Quote sent.', 'info')
       setShowSendForm(false)
       setSendEmail('')
     },
@@ -199,6 +204,7 @@ function QuoteDetailModal({ quoteId, onClose }: { quoteId: string; onClose: () =
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] })
       queryClient.invalidateQueries({ queryKey: ['applications'] })
+      toast('Application created from quote.')
       onClose()
     },
     onError: (err: unknown) => { setError(errMsg(err)) },

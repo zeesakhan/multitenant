@@ -8,6 +8,7 @@ import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import Modal from '../components/Modal'
+import { useToast } from '../context/ToastContext'
 import { Tenant } from '../types'
 
 const TIMEZONES = ['UTC', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Dubai', 'Asia/Karachi', 'Asia/Kolkata', 'Asia/Singapore']
@@ -15,6 +16,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SGD', 'CAD', 'AUD
 
 function AddTenantModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [form, setForm] = useState({
     code: '', name: '', contact_email: '', contact_phone: '',
     country: '', currency: 'USD', timezone: 'UTC',
@@ -25,6 +27,7 @@ function AddTenantModal({ open, onClose }: { open: boolean; onClose: () => void 
     mutationFn: () => tenantsApi.create(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
+      toast('Tenant created.')
       onClose()
       setForm({ code: '', name: '', contact_email: '', contact_phone: '', country: '', currency: 'USD', timezone: 'UTC' })
       setError('')

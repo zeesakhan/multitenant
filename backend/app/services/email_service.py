@@ -130,8 +130,8 @@ class EmailService:
 
     def notify_password_reset(self, to_email: str, name: str, token: str) -> bool:
         subject = "Reset your password"
-        # In production, replace with your actual frontend URL
-        reset_url = f"https://app.yourdomain.com/reset-password?token={token}"
+        frontend_url = getattr(self.settings, "frontend_url", "http://localhost:5173")
+        reset_url = f"{frontend_url}/reset-password?token={token}"
         html = f"""
         <h2>Dear {name},</h2>
         <p>We received a request to reset your password. Click the button below to choose a new one.</p>
