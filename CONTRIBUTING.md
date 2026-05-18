@@ -6,9 +6,9 @@
 |------|---------|
 | Python | 3.9+ |
 | Node.js | 18+ |
-| Docker & Docker Compose | 24+ (optional, for full-stack dev) |
+| Docker & Docker Compose | 24+ (optional) |
 
-## Quick start (local)
+## Quick Start (local)
 
 ```bash
 # Clone and enter the repo
@@ -25,102 +25,138 @@ source ../venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # fill in the values
 alembic upgrade head
-uvicorn main:app --reload
+uvicorn main:app --reload     # http://localhost:8000
 
 # Frontend (new terminal)
 cd frontend
 npm install
-npm run dev
+npm run dev                   # http://localhost:5173
 ```
 
 Or use `make dev` from the repo root (starts both processes).
 
-Default dev accounts (SQLite seed):
+## Default Dev Accounts
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@testco.com | admin123 | tenant_admin |
-| agent@testco.com | password123 | agent |
-| superadmin@system.com | super123 | super_admin |
+| `admin@testco.com` | `admin123` | Tenant Admin |
+| `agent@testco.com` | `password123` | Agent |
+| `superadmin@system.com` | `super123` | Super Admin |
 
-## Project layout
+Default tenant code: **TESTCO**
+
+## Portals
+
+| Portal | URL | Notes |
+|--------|-----|-------|
+| Staff back-office | `http://localhost:5173/` | Requires staff login |
+| Purchase storefront | `http://localhost:5173/buy` | Public — no login |
+| Member portal | `http://localhost:5173/portal` | Requires customer account |
+| API docs | `http://localhost:8000/docs` | FastAPI Swagger (dev only) |
+
+## Project Layout
 
 ```
 python/
-├── backend/          # FastAPI application
+├── backend/
 │   ├── app/
-│   │   ├── api/v1/   # Route handlers
-│   │   ├── models/   # SQLAlchemy models
-│   │   ├── services/ # Business logic
-│   │   └── middleware/
-│   ├── tests/        # pytest suite
-│   ├── alembic/      # DB migrations
+│   │   ├── api/v1/        # Route handlers
+│   │   │   ├── auth.py
+│   │   │   ├── buy.py         ← purchase portal (public)
+│   │   │   ├── customer.py    ← member portal (customer JWT)
+│   │   │   ├── products.py
+│   │   │   ├── applications.py
+│   │   │   └── …
+│   │   ├── models/        # SQLAlchemy models
+│   │   ├── services/      # Business logic
+│   │   ├── schemas/       # Pydantic schemas
+│   │   └── middleware/    # Auth, tenant context, rate limiting
+│   ├── tests/             # pytest suite (105 tests)
+│   ├── alembic/           # DB migrations
 │   └── main.py
-├── frontend/         # React + Vite SPA
+├── frontend/
 │   ├── src/
-│   │   ├── pages/
-│   │   ├── components/
-│   │   ├── services/api.ts
+│   │   ├── pages/             # Staff pages
+│   │   ├── pages/portal/      # Member portal pages
+│   │   ├── pages/buy/         # Purchase portal pages
+│   │   ├── components/        # Layout, PortalLayout, shared UI
+│   │   ├── services/
+│   │   │   ├── api.ts             ← staff API client
+│   │   │   ├── portalApi.ts       ← member portal API client
+│   │   │   └── buyApi.ts          ← purchase portal API client
 │   │   └── store/
-│   └── tests/        # Vitest suite
-├── infra/docker/     # docker-compose + nginx
+│   │       ├── authStore.ts       ← staff session
+│   │       └── portalAuthStore.ts ← customer session
+│   └── tests/             # Vitest suite (79 tests)
+├── docs/                  # Project documentation
+├── infra/docker/          # docker-compose + nginx
 └── Makefile
 ```
 
-## Running tests
+## Running Tests
 
 ```bash
 # All tests
 make test
 
-# Backend only
+# Backend only (pytest)
 make test-backend
 
-# Frontend only
+# Frontend only (vitest)
 make test-frontend
+
+# Specific backend file
+cd backend && python -m pytest tests/test_buy.py -v
+
+# Specific frontend file
+cd frontend && npx vitest run tests/DashboardPage.test.tsx
 ```
 
-Backend: `pytest` with an in-memory SQLite database — no external services needed.  
-Frontend: `vitest` with `@testing-library/react` — components rendered in jsdom.
+Backend tests use an in-memory SQLite database — no external services needed.  
+Frontend tests use Vitest + `@testing-library/react` with jsdom.
 
-## Making changes
+## Making Backend Changes
 
-### Backend
-
-- Models live in `app/models/`. After changing a model, generate a migration:
+- **New model** → add to `app/models/`, import in `app/models/__init__.py`, generate migration:
   ```bash
   alembic revision --autogenerate -m "describe change"
   alembic upgrade head
   ```
-- All API routes require a valid JWT (`Authorization: Bearer <token>`) and a tenant header (`X-Tenant-ID: <uuid>`), except `/api/v1/auth/*` and `/health`.
-- Multi-tenancy: every query must be scoped to `tenant_id`. The `TenantContextMiddleware` resolves the tenant from the header and stores it in `request.state`.
+- **New route** → add handler in `app/api/v1/`, register router in `app/api/v1/__init__.py`
+- **Staff routes** require `Depends(require_permissions(PERMISSION))` + JWT
+- **Customer routes** require `Depends(get_current_customer)` in `customer.py`
+- **Public routes** (purchase portal) only need `X-Tenant-ID` via `_get_tenant()` in `buy.py`
+- Every query must be scoped to `tenant_id` — never query without it
 
-### Frontend
+## Making Frontend Changes
 
-- Pages are in `src/pages/`. Each page uses React Query for data fetching and the `useToast()` hook for feedback.
-- API calls go through `src/services/api.ts`. Add new endpoints there.
-- Auth state is in `src/store/authStore.ts` (Zustand).
+- **New staff page** → `src/pages/`, add route in `App.tsx` inside `<PrivateRoute>`
+- **New portal page** → `src/pages/portal/`, add route inside `<PortalPrivateRoute>`
+- **New buy page** → `src/pages/buy/`, add as a public route in `App.tsx`
+- Use React Query (`useQuery` / `useMutation`) for all server state
+- Staff API calls → `src/services/api.ts`
+- Member portal calls → `src/services/portalApi.ts`
+- Purchase portal calls → `src/services/buyApi.ts`
+- Toast feedback → `useToast()` hook
 
-### Adding a new feature (checklist)
+## New Feature Checklist
 
-- [ ] Backend route + service + model (+ migration if schema changes)
+- [ ] Backend route + service (+ migration if schema changes)
 - [ ] Backend tests in `backend/tests/`
 - [ ] Frontend page or component
 - [ ] Frontend tests in `frontend/tests/`
-- [ ] Update `TASKS.md` if it tracks this area
+- [ ] Update relevant docs in `docs/`
 
-## Code style
+## Code Style
 
-- **Python**: `ruff` for linting, `black` for formatting (`make lint` / `make format`).
-- **TypeScript**: ESLint + Prettier (`npm run lint` in `frontend/`).
-- No `print()` debugging in committed code — use the structured logger (`app/utils/logger.py`).
+- **Python**: `ruff` for linting, `black` for formatting (`make lint` / `make format`)
+- **TypeScript**: ESLint + Prettier (`npm run lint` in `frontend/`)
+- No `print()` debugging in committed code — use the structured logger (`app/utils/logger.py`)
 
-## Environment variables
+## Environment Variables
 
 Copy `backend/.env.example` to `backend/.env`. Never commit `.env`.  
-Use `make secrets` to generate `SECRET_KEY` and `ENCRYPTION_KEY` values.
-
-Key variables:
+Use `make secrets` to generate `SECRET_KEY` and `ENCRYPTION_KEY`.
 
 | Variable | Purpose |
 |----------|---------|
@@ -139,9 +175,10 @@ make docker-down  # tears everything down
 
 The backend runs `alembic upgrade head` automatically on container start.
 
-## Pull request guidelines
+## Pull Request Guidelines
 
-1. One concern per PR — avoid mixing feature work with refactors.
-2. All CI checks must pass (`pytest`, `vitest`, `npm run build`).
-3. Include a short description of what changed and why.
-4. For schema changes, include the generated migration file.
+1. One concern per PR — avoid mixing feature work with refactors
+2. All CI checks must pass (`pytest`, `vitest`, `npm run build`)
+3. Include a short description of what changed and why
+4. For schema changes, include the generated migration file
+5. For portal changes, verify the relevant portal still works end-to-end
