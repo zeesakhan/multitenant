@@ -30,6 +30,14 @@ class Member(TenantModel):
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     national_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
+    # UAE-specific compliance fields
+    passport_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    emirates_id: Mapped[Optional[str]] = mapped_column(String(25), nullable=True)
+    nationality: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    visa_type: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    document_expiry: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    place_of_birth: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     application = sa_relationship("Application", back_populates="members")
 
     __table_args__ = (

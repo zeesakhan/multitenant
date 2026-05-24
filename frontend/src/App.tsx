@@ -22,6 +22,8 @@ import NotFoundPage from './pages/NotFoundPage'
 import BuyLandingPage from './pages/buy/BuyLandingPage'
 import BuyProductsPage from './pages/buy/BuyProductsPage'
 import BuyApplyPage from './pages/buy/BuyApplyPage'
+import AdamjeeLandingPage from './pages/buy/adamjee/AdamjeeLandingPage'
+import AdamjeeBuyPage from './pages/buy/adamjee/AdamjeeBuyPage'
 import PortalLoginPage from './pages/portal/PortalLoginPage'
 import PortalRegisterPage from './pages/portal/PortalRegisterPage'
 import PortalDashboardPage from './pages/portal/PortalDashboardPage'
@@ -78,6 +80,10 @@ export default function App() {
       <Route path="/buy" element={<BuyLandingPage />} />
       <Route path="/buy/products" element={<BuyProductsPage />} />
       <Route path="/buy/apply" element={<BuyApplyPage />} />
+
+      {/* Adamjee UAE Insurance journey */}
+      <Route path="/buy/adamjee" element={<AdamjeeLandingPage />} />
+      <Route path="/buy/adamjee/buy" element={<AdamjeeBuyPage />} />
 
       {/* Customer portal */}
       <Route path="/portal/login" element={<PortalLoginPage />} />
