@@ -40,7 +40,12 @@ interface FormState {
 const NATIONALITIES = [
   'UAE National','Pakistani','Indian','Filipino','Bangladeshi','Egyptian',
   'Jordanian','Saudi Arabian','British','American','Sri Lankan','Nepali',
-  'Lebanese','Syrian','Yemeni','Ethiopian','Sudanese','Chinese','Other',
+  'Lebanese','Syrian','Yemeni','Ethiopian','Sudanese','Chinese',
+  'Malaysian','Indonesian','Turkish','Iranian','Kenyan','Nigerian',
+  'South African','Ghanaian','Moroccan','Algerian','Libyan','Iraqi',
+  'Kuwaiti','Bahraini','Qatari','Omani','Afghan','German','French',
+  'Spanish','Italian','Russian','South Korean','Japanese','Australian',
+  'Canadian','New Zealander','Tunisian','Ugandan','Tanzanian','Other',
 ]
 const VISA_TYPES = [
   'Employment Visa','Residence Visa (Family)','Investor Visa',
@@ -417,7 +422,10 @@ export default function AdamjeeBuyPage() {
       if (d.first_name) set('first_name', d.first_name)
       if (d.last_name) set('last_name', d.last_name)
       if (d.date_of_birth) set('date_of_birth', d.date_of_birth)
-      if (d.nationality) set('nationality', d.nationality)
+      if (d.nationality) {
+        const match = NATIONALITIES.find(n => n.toLowerCase() === d.nationality.toLowerCase())
+        if (match) set('nationality', match)
+      }
       if (d.gender) set('gender', d.gender)
       if (d.passport_number) { set('passport_number', d.passport_number); set('document_type', 'passport') }
       if (d.emirates_id) { set('emirates_id', d.emirates_id); set('document_type', 'emirates_id') }
