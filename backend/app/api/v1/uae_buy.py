@@ -94,6 +94,46 @@ UAE_REGULATIONS = [
     },
 ]
 
+# MRZ 3-letter ISO country code → nationality adjective
+_NATIONALITY_MAP: dict[str, str] = {
+    'PAK': 'Pakistani', 'IND': 'Indian', 'PHL': 'Filipino',
+    'BGD': 'Bangladeshi', 'EGY': 'Egyptian', 'JOR': 'Jordanian',
+    'SAU': 'Saudi Arabian', 'GBR': 'British', 'USA': 'American',
+    'LKA': 'Sri Lankan', 'NPL': 'Nepali', 'LBN': 'Lebanese',
+    'SYR': 'Syrian', 'YEM': 'Yemeni', 'ETH': 'Ethiopian',
+    'SDN': 'Sudanese', 'CHN': 'Chinese', 'ARE': 'UAE National',
+    'MYS': 'Malaysian', 'IDN': 'Indonesian', 'TUR': 'Turkish',
+    'IRN': 'Iranian', 'KEN': 'Kenyan', 'NGA': 'Nigerian',
+    'ZAF': 'South African', 'GHA': 'Ghanaian', 'MAR': 'Moroccan',
+    'DZA': 'Algerian', 'LBY': 'Libyan', 'IRQ': 'Iraqi',
+    'KWT': 'Kuwaiti', 'BHR': 'Bahraini', 'QAT': 'Qatari',
+    'OMN': 'Omani', 'AFG': 'Afghan', 'DEU': 'German',
+    'FRA': 'French', 'ESP': 'Spanish', 'ITA': 'Italian',
+    'RUS': 'Russian', 'KOR': 'South Korean', 'JPN': 'Japanese',
+    'AUS': 'Australian', 'CAN': 'Canadian', 'NZL': 'New Zealander',
+    'TUN': 'Tunisian', 'UGA': 'Ugandan', 'TZA': 'Tanzanian',
+}
+
+# Visible-text nationality word → adjective (for when the OCR reads the printed word)
+_VIS_NATIONALITY_MAP: dict[str, str] = {
+    'PAKISTANI': 'Pakistani', 'INDIAN': 'Indian', 'FILIPINO': 'Filipino',
+    'BANGLADESHI': 'Bangladeshi', 'EGYPTIAN': 'Egyptian', 'BRITISH': 'British',
+    'AMERICAN': 'American', 'CHINESE': 'Chinese', 'KENYAN': 'Kenyan',
+    'EMIRATI': 'UAE National', 'EMIRATIAN': 'UAE National',
+    'NEPALI': 'Nepali', 'LEBANESE': 'Lebanese', 'SYRIAN': 'Syrian',
+    'YEMENI': 'Yemeni', 'ETHIOPIAN': 'Ethiopian', 'SUDANESE': 'Sudanese',
+    'JORDANIAN': 'Jordanian', 'SAUDI': 'Saudi Arabian',
+    'MALAYSIAN': 'Malaysian', 'INDONESIAN': 'Indonesian',
+    'TURKISH': 'Turkish', 'IRANIAN': 'Iranian', 'NIGERIAN': 'Nigerian',
+    'GHANAIAN': 'Ghanaian', 'MOROCCAN': 'Moroccan', 'ALGERIAN': 'Algerian',
+    'LIBYAN': 'Libyan', 'IRAQI': 'Iraqi', 'KUWAITI': 'Kuwaiti',
+    'BAHRAINI': 'Bahraini', 'QATARI': 'Qatari', 'OMANI': 'Omani',
+    'AFGHAN': 'Afghan', 'GERMAN': 'German', 'FRENCH': 'French',
+    'SPANISH': 'Spanish', 'ITALIAN': 'Italian', 'RUSSIAN': 'Russian',
+    'AUSTRALIAN': 'Australian', 'CANADIAN': 'Canadian',
+    'SRILANKAN': 'Sri Lankan',
+}
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -300,47 +340,200 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
         "emirates_id": "",
         "document_expiry": "",
         "gender": "",
+        "place_of_birth": "",
     }
 
     try:
         import pytesseract
-        from PIL import Image
+        from PIL import Image, ImageFilter, ImageEnhance
         import io
         import re
 
         if "pdf" in content_type:
-            return result  # PDF OCR needs extra deps, skip in dev
+            return result
 
         img = Image.open(io.BytesIO(data))
-        text = pytesseract.image_to_string(img)
 
-        # Try Emirates ID pattern: 784-XXXX-XXXXXXX-X
-        eid_match = re.search(r'784[-\s]?\d{4}[-\s]?\d{7}[-\s]?\d', text)
+        # Preprocess: grayscale, boost contrast, sharpen, upscale
+        img = img.convert("L")
+        img = ImageEnhance.Contrast(img).enhance(2.0)
+        img = ImageEnhance.Sharpness(img).enhance(2.0)
+        img = img.filter(ImageFilter.MedianFilter(size=1))
+        w, h = img.size
+        if max(w, h) < 1500:
+            scale = 1500 / max(w, h)
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+        w, h = img.size
+
+        # General OCR (full image) for visible text fields
+        text_block = pytesseract.image_to_string(img, config="--oem 1 --psm 6")
+
+        # ── Emirates ID: 784-XXXX-XXXXXXX-X ──────────────────────────────
+        eid_pattern = r'784[-\s]?\d{4}[-\s]?\d{7}[-\s]?\d'
+        eid_match = re.search(eid_pattern, text_block)
         if eid_match:
-            result["emirates_id"] = re.sub(r'[\s]', '-', eid_match.group())
-            result["document_type"] = "emirates_id"
+            digits_only = re.sub(r'[^0-9]', '', eid_match.group())
+            if len(digits_only) == 15:
+                result["emirates_id"] = (
+                    f"{digits_only[:3]}-{digits_only[3:7]}"
+                    f"-{digits_only[7:14]}-{digits_only[14]}"
+                )
+                result["document_type"] = "emirates_id"
 
-        # Try passport MRZ lines (TD3: two 44-char lines)
-        lines = [l.strip() for l in text.split('\n') if len(l.strip()) >= 40]
-        mrz_lines = [l for l in lines if re.match(r'^[A-Z0-9<]{40,}$', l)]
-        if len(mrz_lines) >= 2:
-            parsed = _parse_mrz(mrz_lines[0], mrz_lines[1])
-            if parsed:
-                result.update(parsed)
+        # ── Passport MRZ — whitelist scan on full image ───────────────────
+        # A character whitelist stops tesseract guessing '<' as 'c'/'e'.
+        # We scan the full image so portrait crops don't miss a MRZ line.
+        mrz_whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"
+        mrz_cfg = f"--oem 1 --psm 6 -c tessedit_char_whitelist={mrz_whitelist}"
+        text_mrz = pytesseract.image_to_string(img, config=mrz_cfg)
+
+        def _norm_mrz(raw: str) -> str:
+            s = raw.strip().upper().replace(" ", "").replace("\t", "")
+            return re.sub(r'[^A-Z0-9<]', '<', s)
+
+        seen: set = set()
+        # MRZ line 1 starts with document type: P (passport), I (ID), A (visa)
+        # followed immediately by '<' (e.g. 'P<', 'I<').
+        # MRZ line 2 starts with the document/passport number (alphanumeric).
+        # We use the 'P<' / 'I<' prefix as the most reliable distinguisher.
+        line1_cands: list = []
+        line2_cands: list = []
+        for line in text_mrz.split('\n'):
+            norm = _norm_mrz(line)
+            if len(norm) < 20 or norm in seen:
+                continue
+            seen.add(norm)
+            if norm[:2] in ('P<', 'I<', 'A<', 'V<'):
+                line1_cands.append(norm)
+            elif len(norm) >= 35:
+                line2_cands.append(norm)
+
+        mrz_parsed = None
+        if line1_cands and line2_cands:
+            mrz1 = max(line1_cands, key=len)[:44].ljust(44, '<')
+            mrz2 = max(line2_cands, key=len)[:44].ljust(44, '<')
+            mrz_parsed = _parse_mrz(mrz1, mrz2)
+            if mrz_parsed:
+                result.update(mrz_parsed)
                 result["document_type"] = "passport"
 
-        # Generic name extraction fallback
-        name_match = re.search(r'(?:Name|NAME)[:\s]+([A-Z][a-z]+)\s+([A-Z][a-z]+)', text)
-        if name_match and not result["first_name"]:
-            result["first_name"] = name_match.group(1)
-            result["last_name"] = name_match.group(2)
+        # ── Post-MRZ enrichment: nationality, names, place of birth ──────
+        # Map MRZ 3-letter code → human-readable nationality
+        if result["nationality"]:
+            result["nationality"] = _NATIONALITY_MAP.get(
+                result["nationality"].upper(), result["nationality"]
+            )
+        # Prefer visible-text nationality (printed word is unambiguous)
+        nat_vis_m = re.search(r'Nationality[:\s\']+([A-Za-z]+)', text_block, re.IGNORECASE)
+        if nat_vis_m:
+            vis_nat = nat_vis_m.group(1).strip().upper()
+            mapped = _VIS_NATIONALITY_MAP.get(vis_nat)
+            if mapped:
+                result["nationality"] = mapped
+
+        # Words that are field labels / noise — filter them out of name lines
+        _OCR_NOISE = {
+            'PASSPORT', 'NATIONAL', 'NATIONALITY', 'DATE', 'BIRTH', 'SEX',
+            'NAMES', 'NAME', 'EXPIRY', 'ISSUE', 'PERSONAL', 'CITIZEN', 'NO',
+            'GIVEN', 'SURNAME', 'REPUBLIC', 'ISLAMIC',
+        }
+        text_lines = [ln.strip() for ln in text_block.split('\n') if ln.strip()]
+
+        # Visible-text given name — overrides MRZ (MRZ OCR can merge initials: ZEESHAN<K → ZEESHANK)
+        for i, line in enumerate(text_lines):
+            if re.search(r'Given\s+Names?', line, re.IGNORECASE):
+                for next_line in text_lines[i + 1: i + 5]:
+                    words = [w.upper() for w in re.findall(r'[A-Za-z]{3,}', next_line)
+                             if w.upper() not in _OCR_NOISE]
+                    if words:
+                        result["first_name"] = words[0].title()
+                        break
+                break
+
+        # Visible-text surname — overrides MRZ if "Surname" label is readable
+        for i, line in enumerate(text_lines):
+            if re.search(r'\bSurname\b', line, re.IGNORECASE):
+                for next_line in text_lines[i + 1: i + 5]:
+                    words = [w.upper() for w in re.findall(r'[A-Za-z]{3,}', next_line)
+                             if w.upper() not in _OCR_NOISE]
+                    if words:
+                        result["last_name"] = words[0].title()
+                        break
+                break
+
+        # Surname fallback: detect OCR initial-merging artefact.
+        # When tesseract drops the single '<' separator in MRZ (e.g. KHAN<K → KHANK,
+        # ZEESHAN<K → ZEESHANK), the extra chars appended to both given and surname are
+        # identical. Compare the visible given name against the MRZ given name to identify
+        # the suffix, then strip the same suffix from the MRZ surname.
+        if mrz_parsed and result["first_name"] and result["last_name"]:
+            vis_given = result["first_name"].upper().replace(" ", "")
+            mrz_given = mrz_parsed.get("first_name", "").upper().replace(" ", "")
+            mrz_surname = mrz_parsed.get("last_name", "").upper().replace(" ", "")
+            if (mrz_given.startswith(vis_given) and len(mrz_given) > len(vis_given)):
+                extra = mrz_given[len(vis_given):]
+                if mrz_surname.endswith(extra) and len(mrz_surname) > len(extra):
+                    result["last_name"] = mrz_surname[: -len(extra)].replace("<", " ").strip().title()
+
+        # Place of birth: try labelled field first, then sex-marker pattern
+        pob_label_m = re.search(
+            r'Place\s+of\s+Birth[:\s\']*([A-Za-z][A-Za-z,\s]+)', text_block, re.IGNORECASE
+        )
+        if pob_label_m:
+            result["place_of_birth"] = pob_label_m.group(1).strip().split('\n')[0].strip()
+        else:
+            # Fallback: sex marker (M/F) followed by city name, e.g. "M KARACHI, PAK"
+            _NOT_PLACE = {'MALE', 'FEMALE', 'NATIONAL', 'PAKISTAN', 'PAKISTANI',
+                          'INDIAN', 'BANGLADESH', 'NATIONALITY'}
+            pob_fb = re.search(
+                r'(?:^|[\s,\n])([MF])\s+([A-Z][A-Za-z]{2,}(?:[,\s]+[A-Z]{2,4})?)',
+                text_block, re.MULTILINE,
+            )
+            if pob_fb:
+                city = pob_fb.group(2).strip()
+                if city.upper() not in _NOT_PLACE:
+                    result["place_of_birth"] = city
+
+        # ── Emirates ID visible text fields ───────────────────────────────
+        if result["document_type"] == "emirates_id" and not result["first_name"]:
+            name_m = re.search(
+                r'(?:Name|NAME)[:\s]+([A-Za-z]+)\s+([A-Za-z]+)',
+                text_block,
+            )
+            if name_m:
+                result["first_name"] = name_m.group(1).title()
+                result["last_name"] = name_m.group(2).title()
+
+            nat_m = re.search(r'(?:Nationality|NATIONALITY)[:\s]+([A-Za-z ]+)', text_block)
+            if nat_m:
+                result["nationality"] = nat_m.group(1).strip().title()
+
+            dob_m = re.search(
+                r'(?:DOB|Date of Birth|BIRTH)[:\s]+(\d{2}[/\-.]\d{2}[/\-.]\d{4})',
+                text_block,
+            )
+            if dob_m:
+                parts = re.sub(r'[/\-.]', '-', dob_m.group(1)).split('-')
+                if len(parts) == 3:
+                    result["date_of_birth"] = f"{parts[2]}-{parts[1]}-{parts[0]}"
+
+        # ── Generic name fallback ─────────────────────────────────────────
+        if not result["first_name"]:
+            name_m = re.search(
+                r'(?:Given\s*Names?|First\s*Name)[:\s]+([A-Za-z]+)(?:\s+([A-Za-z]+))?',
+                text_block, re.IGNORECASE,
+            )
+            if name_m:
+                result["first_name"] = name_m.group(1).title()
+                if name_m.group(2):
+                    result["last_name"] = name_m.group(2).title()
 
         result["ocr_success"] = bool(
             result["first_name"] or result["passport_number"] or result["emirates_id"]
         )
 
     except ImportError:
-        pass  # pytesseract/Pillow not installed — return empty fields
+        pass
     except Exception:
         pass
 
@@ -352,22 +545,38 @@ def _parse_mrz(line1: str, line2: str) -> Optional[dict]:
     try:
         if len(line1) < 44 or len(line2) < 44:
             return None
+
+        # Normalise common OCR digit-field misreads: O→0, I/L→1, B→8, S→5, G→6
+        def _fix_digits(s: str) -> str:
+            return (s.replace('O', '0').replace('I', '1').replace('L', '1')
+                      .replace('B', '8').replace('S', '5').replace('G', '6'))
+
         raw_names = line1[5:44].split("<<", 1)
         surname = raw_names[0].replace("<", " ").strip()
         given = raw_names[1].replace("<", " ").strip() if len(raw_names) > 1 else ""
 
+        # Passport number is alphanumeric — do NOT apply digit fixes
         passport_num = line2[0:9].replace("<", "").strip()
         nationality = line2[10:13].replace("<", "").strip()
-        dob_raw = line2[13:19]
+        dob_raw = _fix_digits(line2[13:19])
         sex = line2[20]
-        expiry_raw = line2[21:27]
+        expiry_raw = _fix_digits(line2[21:27])
 
         def _mrz_date(s: str) -> str:
             if len(s) != 6:
                 return ""
-            yy, mm, dd = s[:2], s[2:4], s[4:6]
-            year = f"19{yy}" if int(yy) > 30 else f"20{yy}"
-            return f"{year}-{mm}-{dd}"
+            try:
+                yy, mm, dd = s[:2], s[2:4], s[4:6]
+                # Validate numeric fields before converting
+                if not (yy.isdigit() and mm.isdigit() and dd.isdigit()):
+                    return ""
+                year = f"19{yy}" if int(yy) > 30 else f"20{yy}"
+                # Basic range sanity
+                if not (1 <= int(mm) <= 12 and 1 <= int(dd) <= 31):
+                    return ""
+                return f"{year}-{mm}-{dd}"
+            except ValueError:
+                return ""
 
         return {
             "last_name": surname,

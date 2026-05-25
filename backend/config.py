@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import Optional
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -59,7 +60,7 @@ class Settings(BaseSettings):
     enable_government_integration: bool = False
     enable_batch_processing: bool = False
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=Path(__file__).parent / ".env", case_sensitive=False)
 
 
 @lru_cache()
