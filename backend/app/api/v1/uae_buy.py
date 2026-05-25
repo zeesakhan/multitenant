@@ -352,7 +352,9 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
         if "pdf" in content_type:
             return result
 
+        from PIL import ImageOps
         img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img)  # honour EXIF rotation (mobile camera uploads)
 
         # Preprocess: grayscale, boost contrast, sharpen, upscale
         img = img.convert("L")
@@ -407,6 +409,49 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
                 line1_cands.append(norm)
             elif len(norm) >= 35:
                 line2_cands.append(norm)
+
+        # No P< MRZ found → try alternative orientations.
+        # For sideways passports the MRZ strip must be extracted from a pre-rotated
+        # landscape image so the strip is portrait (narrow width × tall height) and
+        # then rotated CCW/CW to produce a landscape image with MRZ horizontal.
+        if not line1_cands:
+            # Pre-rotate to landscape in both CW and CCW directions
+            _img_cw  = img.rotate(270, expand=True)   # 90° CW
+            _img_ccw = img.rotate(90,  expand=True)   # 90° CCW
+            _cw_w,  _cw_h  = _img_cw.size
+            _ccw_w, _ccw_h = _img_ccw.size
+            _retry_configs = [
+                # 180° upside-down
+                (img.rotate(180),
+                 img.rotate(180)),
+                # Passport photographed 90° CW: data page is in left 35% of the CW image.
+                # Crop that narrow strip, rotate 90° CCW → landscape with MRZ horizontal.
+                # Use the same strip for both MRZ and full-text OCR (full rotated image is garbled).
+                (_img_cw.crop((0, 0, int(_cw_w * 0.35), _cw_h)).rotate(90, expand=True),
+                 _img_cw.crop((0, 0, int(_cw_w * 0.35), _cw_h)).rotate(90, expand=True)),
+                # Passport photographed 90° CCW: data page is in right 35% of CCW image.
+                (_img_ccw.crop((int(_ccw_w * 0.65), 0, _ccw_w, _ccw_h)).rotate(270, expand=True),
+                 _img_ccw.crop((int(_ccw_w * 0.65), 0, _ccw_w, _ccw_h)).rotate(270, expand=True)),
+            ]
+            for _mrz_img, _text_img in _retry_configs:
+                if line1_cands:
+                    break
+                _text_mrz_r = pytesseract.image_to_string(_mrz_img, config=mrz_cfg)
+                _seen_r: set = set()
+                _l1r: list = []
+                _l2r: list = []
+                for _lr in _text_mrz_r.split('\n'):
+                    _nr = _norm_mrz(_lr)
+                    if len(_nr) < 20 or _nr in _seen_r:
+                        continue
+                    _seen_r.add(_nr)
+                    if _nr[:2] in ('P<', 'I<', 'A<', 'V<'):
+                        _l1r.append(_nr)
+                    elif len(_nr) >= 35:
+                        _l2r.append(_nr)
+                if _l1r:
+                    line1_cands, line2_cands = _l1r, _l2r
+                    text_block = pytesseract.image_to_string(_text_img, config="--oem 1 --psm 6")
 
         mrz_parsed = None
         if line1_cands and line2_cands:
@@ -482,9 +527,12 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
         if pob_label_m:
             result["place_of_birth"] = pob_label_m.group(1).strip().split('\n')[0].strip()
         else:
-            # Fallback: sex marker (M/F) followed by city name, e.g. "M KARACHI, PAK"
             _NOT_PLACE = {'MALE', 'FEMALE', 'NATIONAL', 'PAKISTAN', 'PAKISTANI',
                           'INDIAN', 'BANGLADESH', 'NATIONALITY'}
+            _KNOWN_COUNTRIES = {'PAK', 'IND', 'ARE', 'PHL', 'BGD', 'EGY', 'SAU',
+                                'GBR', 'USA', 'LKA', 'NPL', 'LBN', 'SYR', 'YEM',
+                                'CHN', 'KWT', 'BHR', 'QAT', 'OMN', 'JOR', 'IRQ'}
+            # Fallback 1: sex marker (M/F) followed by city, e.g. "M KARACHI, PAK"
             pob_fb = re.search(
                 r'(?:^|[\s,\n])([MF])\s+([A-Z][A-Za-z]{2,}(?:[,\s]+[A-Z]{2,4})?)',
                 text_block, re.MULTILINE,
@@ -493,6 +541,15 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
                 city = pob_fb.group(2).strip()
                 if city.upper() not in _NOT_PLACE:
                     result["place_of_birth"] = city
+            # Fallback 2: CITY, COUNTRY_CODE pattern (e.g. "SIALKOT, PAK")
+            if not result["place_of_birth"]:
+                pob_city_m = re.search(
+                    r'\b([A-Z]{3,}),\s*([A-Z]{2,3})\b', text_block
+                )
+                if pob_city_m:
+                    city2, country2 = pob_city_m.group(1), pob_city_m.group(2)
+                    if city2 not in _NOT_PLACE and country2 in _KNOWN_COUNTRIES:
+                        result["place_of_birth"] = f"{city2}, {country2}"
 
         # ── Emirates ID visible text fields ───────────────────────────────
         if result["document_type"] == "emirates_id" and not result["first_name"]:
@@ -553,7 +610,16 @@ def _parse_mrz(line1: str, line2: str) -> Optional[dict]:
 
         raw_names = line1[5:44].split("<<", 1)
         surname = raw_names[0].replace("<", " ").strip()
-        given = raw_names[1].replace("<", " ").strip() if len(raw_names) > 1 else ""
+        if len(raw_names) > 1:
+            # Filter out single-char fillers and OCR garbage (e.g. "SKSSSSK" from
+            # background pattern confusion — any char repeated 4+ times in a row).
+            given_parts = [
+                p for p in raw_names[1].split('<')
+                if len(p) >= 2 and not re.search(r'(.)\1{3,}', p)
+            ]
+            given = ' '.join(given_parts[:2])
+        else:
+            given = ""
 
         # Passport number is alphanumeric — do NOT apply digit fixes
         passport_num = line2[0:9].replace("<", "").strip()
@@ -562,16 +628,21 @@ def _parse_mrz(line1: str, line2: str) -> Optional[dict]:
         sex = line2[20]
         expiry_raw = _fix_digits(line2[21:27])
 
-        def _mrz_date(s: str) -> str:
+        def _mrz_date(s: str, future: bool = False) -> str:
             if len(s) != 6:
                 return ""
             try:
                 yy, mm, dd = s[:2], s[2:4], s[4:6]
-                # Validate numeric fields before converting
                 if not (yy.isdigit() and mm.isdigit() and dd.isdigit()):
                     return ""
-                year = f"19{yy}" if int(yy) > 30 else f"20{yy}"
-                # Basic range sanity
+                n = int(yy)
+                if future:
+                    # Expiry dates: always 2000s for yy 00–99
+                    # (no passport expires in the 1900s)
+                    year = f"20{yy}"
+                else:
+                    # Birth dates: use threshold — >30 → 1900s, else 2000s
+                    year = f"19{yy}" if n > 30 else f"20{yy}"
                 if not (1 <= int(mm) <= 12 and 1 <= int(dd) <= 31):
                     return ""
                 return f"{year}-{mm}-{dd}"
@@ -584,7 +655,7 @@ def _parse_mrz(line1: str, line2: str) -> Optional[dict]:
             "passport_number": passport_num,
             "nationality": nationality,
             "date_of_birth": _mrz_date(dob_raw),
-            "document_expiry": _mrz_date(expiry_raw),
+            "document_expiry": _mrz_date(expiry_raw, future=True),
             "gender": "M" if sex == "M" else "F",
         }
     except Exception:
