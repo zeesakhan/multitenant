@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart2, TrendingUp, FileText, AlertCircle } from 'lucide-react'
+import { BarChart2, TrendingUp, FileText, AlertCircle, Download, ShieldAlert, Globe, DollarSign } from 'lucide-react'
 import { reportsApi } from '../services/api'
+import api from '../services/api'
 import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { ReportSummary } from '../types'
@@ -40,7 +42,38 @@ const APP_STATUS_COLORS: Record<string, string> = {
   issued: 'bg-violet-500', cancelled: 'bg-orange-400',
 }
 
+async function downloadReport(endpoint: string, filename: string, format: 'csv' | 'pdf' = 'csv') {
+  try {
+    const res = await api.get(`/reports/${endpoint}?format=${format}`, {
+      responseType: format === 'pdf' ? 'blob' : 'text',
+    })
+    const mime = format === 'pdf' ? 'application/pdf' : 'text/csv'
+    const blob = new Blob([res.data], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    alert('Failed to download report. Ensure the backend is running.')
+  }
+}
+
+const EXTRA_REPORTS = [
+  { key: 'policies-issued', label: 'Policy Issued Report', icon: ShieldAlert, color: 'text-violet-600', desc: 'All policies issued within date range' },
+  { key: 'commission-statement', label: 'Commission Statement', icon: DollarSign, color: 'text-emerald-600', desc: 'Broker/insurer commission breakdown' },
+  { key: 'underwriter', label: 'Underwriter Report', icon: FileText, color: 'text-blue-600', desc: 'Applications reviewed with UW loadings' },
+  { key: 'aml-screening', label: 'AML Screening Report', icon: ShieldAlert, color: 'text-red-600', desc: 'AML risk scores and hold history' },
+  { key: 'govt-verification', label: 'Govt Verification Report', icon: Globe, color: 'text-amber-600', desc: 'ICP, sanctions checks with results' },
+  { key: 'str-log', label: 'STR Log Report', icon: AlertCircle, color: 'text-orange-600', desc: 'All Suspicious Transaction Reports' },
+  { key: 'dha-fines', label: 'DHA Fine Report', icon: AlertCircle, color: 'text-rose-600', desc: 'Potential DHA fine exposure report' },
+]
+
 export default function ReportsPage() {
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
   const summaryQ = useQuery({ queryKey: ['report-summary'], queryFn: () => reportsApi.summary() })
   const appsQ = useQuery({ queryKey: ['report-apps'], queryFn: () => reportsApi.applications(6) })
   const premiumQ = useQuery({ queryKey: ['report-premium'], queryFn: () => reportsApi.premium(6) })
@@ -161,6 +194,56 @@ export default function ReportsPage() {
           <p className="text-gray-500">No report data available yet. Create policies and record payments to see analytics.</p>
         </div>
       )}
+
+      {/* Additional reports */}
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <Download className="w-4 h-4 text-gray-400" /> Export Reports
+        </h2>
+        <div className="mb-4 flex items-center gap-4">
+          <div>
+            <label className="label">Date From</label>
+            <input type="date" className="input text-sm" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Date To</label>
+            <input type="date" className="input text-sm" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {EXTRA_REPORTS.map(({ key, label, icon: Icon, color, desc }) => (
+            <div key={key} className="card flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${color}`} />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{label}</p>
+                  <p className="text-xs text-gray-500">{desc}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const q = dateFrom || dateTo ? `&date_from=${dateFrom}&date_to=${dateTo}` : ''
+                    downloadReport(`${key}?${q}`, `${key}.csv`, 'csv')
+                  }}
+                  className="text-xs text-gray-600 hover:text-gray-800 font-medium flex items-center gap-1 border border-gray-300 rounded px-2 py-1"
+                >
+                  <Download className="w-3 h-3" /> CSV
+                </button>
+                <button
+                  onClick={() => {
+                    const q = dateFrom || dateTo ? `&date_from=${dateFrom}&date_to=${dateTo}` : ''
+                    downloadReport(`${key}?${q}`, `${key}.pdf`, 'pdf')
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 border border-primary-300 rounded px-2 py-1"
+                >
+                  <Download className="w-3 h-3" /> PDF
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

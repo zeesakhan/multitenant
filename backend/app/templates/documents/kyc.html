@@ -1,0 +1,53 @@
+{% extends "_base.html" %}
+{% block doc_title %}Know Your Customer (KYC){% endblock %}
+{% block content %}
+<h2>Personal Information</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Full Legal Name</span><span class="field-val">{{ application.customer_name }}</span></div>
+    <div class="field-row"><span class="field-label">Date of Birth</span><span class="field-val">{{ principal.date_of_birth|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Gender</span><span class="field-val">{{ principal.gender|title|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Marital Status</span><span class="field-val">{{ application.marital_status|title|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Nationality</span><span class="field-val">{{ principal.nationality|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Place of Birth</span><span class="field-val">{{ principal.place_of_birth|default("-") }}</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Emirates ID</span><span class="field-val">{{ principal.emirates_id|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Passport Number</span><span class="field-val">{{ principal.passport_number|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Visa Type</span><span class="field-val">{{ principal.visa_type|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Document Expiry</span><span class="field-val">{{ principal.document_expiry|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Diplomatic Passport</span><span class="field-val">{{ "Yes" if application.is_diplomatic_passport else "No" }}</span></div>
+    <div class="field-row"><span class="field-label">EID Under Process</span><span class="field-val">{{ "Yes" if application.is_eid_under_process else "No" }}</span></div>
+  </div>
+</div>
+
+<h2>Employment &amp; Financial Information</h2>
+<div class="box">
+  <div class="field-row"><span class="field-label">Occupation</span><span class="field-val">{{ application.occupation|default("-") }}</span></div>
+  <div class="field-row"><span class="field-label">Employer</span><span class="field-val">{{ application.employer_name|default("-") }}</span></div>
+  <div class="field-row"><span class="field-label">Sponsor Type</span><span class="field-val">{{ application.sponsor_type|title }}</span></div>
+  <div class="field-row"><span class="field-label">UAE TRN</span><span class="field-val">{{ application.trn|default("N/A") }}</span></div>
+</div>
+
+<h2>PEP &amp; Beneficial Ownership Declaration</h2>
+<div class="box">
+  <p style="font-size:9pt;">A Politically Exposed Person (PEP) is an individual who holds or has held a prominent public function, or a family member or close associate of such a person.</p>
+  <div class="field-row" style="margin-top:8px;"><span class="field-label">Are you a PEP?</span><span class="field-val">☐ Yes &nbsp;&nbsp; ☐ No &nbsp; (Please tick)</span></div>
+  <div class="field-row"><span class="field-label">Beneficial Owner (if different from policyholder)</span><span class="field-val">☐ Yes &nbsp;&nbsp; ☐ No</span></div>
+  <div class="field-row"><span class="field-label">Source of Premium Funds</span><span class="field-val">☐ Salary &nbsp; ☐ Business Income &nbsp; ☐ Investment &nbsp; ☐ Other: ___________</span></div>
+</div>
+
+<h2>Consent &amp; Declaration</h2>
+<div class="disclaimer" style="font-size:9pt; color:#222;">
+  I hereby declare that the information provided above is true and accurate to the best of my knowledge.
+  I consent to Adamjee Insurance verifying the information with relevant authorities including ICP, DHA,
+  UAE FIU, OFAC and UN Sanctions Lists as required under UAE AML Law and Cabinet Resolution 74 of 2020.
+  I understand that false or misleading information may result in policy cancellation and regulatory reporting.
+</div>
+
+<div class="signature-block">
+  <div><div class="sig-line">Policyholder Signature</div></div>
+  <div><div class="sig-line">Date</div></div>
+  <div><div class="sig-line">Witnessed By (if applicable)</div></div>
+</div>
+{% endblock %}

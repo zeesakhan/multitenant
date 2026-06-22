@@ -1,0 +1,78 @@
+{% extends "_base.html" %}
+{% block doc_title %}Policy Schedule{% endblock %}
+{% block content %}
+<h2>Policy Information</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Policy Number</span><span class="field-val"><strong>{{ policy.policy_number }}</strong></span></div>
+    <div class="field-row"><span class="field-label">Application No.</span><span class="field-val">{{ application.application_number }}</span></div>
+    <div class="field-row"><span class="field-label">Scheme Reference</span><span class="field-val">{{ policy.policy_number }}</span></div>
+    <div class="field-row"><span class="field-label">Insurer</span><span class="field-val">Adamjee Insurance (PJSC)</span></div>
+    <div class="field-row"><span class="field-label">TPA</span><span class="field-val">MedNet UAE</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Effective Date</span><span class="field-val">{{ policy.start_date }}</span></div>
+    <div class="field-row"><span class="field-label">Expiry Date</span><span class="field-val">{{ policy.end_date }}</span></div>
+    <div class="field-row"><span class="field-label">Issue Date</span><span class="field-val">{{ generation_date }}</span></div>
+    <div class="field-row"><span class="field-label">Annual Premium</span><span class="field-val">AED {{ policy.premium }}</span></div>
+    <div class="field-row"><span class="field-label">Status</span><span class="field-val"><span class="badge badge-blue">{{ policy.status|upper }}</span></span></div>
+  </div>
+</div>
+
+<h2>Policyholder Details</h2>
+<div class="box">
+  <div class="field-row"><span class="field-label">Name</span><span class="field-val">{{ application.customer_name }}</span></div>
+  <div class="field-row"><span class="field-label">Email</span><span class="field-val">{{ application.customer_email }}</span></div>
+  <div class="field-row"><span class="field-label">Employer</span><span class="field-val">{{ application.employer_name|default("-") }}</span></div>
+  <div class="field-row"><span class="field-label">Plan</span><span class="field-val">{{ plan.name }}</span></div>
+  <div class="field-row"><span class="field-label">Annual Limit</span><span class="field-val">AED {{ application.cover_amount|default("1,000,000") }}</span></div>
+</div>
+
+<h2>Covered Members</h2>
+<table>
+  <thead>
+    <tr><th>Member ID</th><th>Name</th><th>Relationship</th><th>DOB</th><th>Emirates ID</th><th>Nationality</th></tr>
+  </thead>
+  <tbody>
+  {% for m in members %}
+  <tr>
+    <td style="font-size:7pt;">{{ m.id[:8] }}…</td>
+    <td>{{ m.first_name }} {{ m.last_name }}</td>
+    <td>{{ m.relationship|title }}</td>
+    <td>{{ m.date_of_birth }}</td>
+    <td>{{ m.emirates_id|default("-") }}</td>
+    <td>{{ m.nationality|default("-") }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Premium Breakdown</h2>
+{% if breakdown %}
+<table>
+  <thead><tr><th>Component</th><th>Amount (AED)</th></tr></thead>
+  <tbody>
+    <tr><td>Gross Premium</td><td>{{ breakdown.gross_premium_excl_tax }}</td></tr>
+    <tr><td>VAT (5%)</td><td>{{ breakdown.vat_amount }}</td></tr>
+    <tr><td>Processing Fee</td><td>{{ breakdown.psp_fee }}</td></tr>
+    <tr><td><strong>Total Paid</strong></td><td><strong>{{ breakdown.amount_payable }}</strong></td></tr>
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Payment Information</h2>
+{% if payment %}
+<div class="box">
+  <div class="field-row"><span class="field-label">Transaction ID</span><span class="field-val">{{ payment.transaction_id|default("-") }}</span></div>
+  <div class="field-row"><span class="field-label">Payment Date</span><span class="field-val">{{ payment.payment_date|default(generation_date) }}</span></div>
+  <div class="field-row"><span class="field-label">Method</span><span class="field-val">{{ payment.payment_method|default("-")|title }}</span></div>
+  <div class="field-row"><span class="field-label">Amount Paid</span><span class="field-val">AED {{ payment.amount }}</span></div>
+  <div class="field-row"><span class="field-label">Status</span><span class="field-val">{{ payment.status|title }}</span></div>
+</div>
+{% endif %}
+
+<div class="disclaimer">
+  This Policy Schedule forms part of the insurance contract between the policyholder and Adamjee Insurance (PJSC).
+  Please read the Policy Wordings carefully. For queries contact: customercare@adamjeeinsurance.ae
+</div>
+{% endblock %}

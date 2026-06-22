@@ -60,7 +60,24 @@ class Settings(BaseSettings):
     enable_government_integration: bool = False
     enable_batch_processing: bool = False
 
-    model_config = SettingsConfigDict(env_file=Path(__file__).parent / ".env", case_sensitive=False)
+    # Payment gateway (Network International UAE)
+    payment_gateway_mock: bool = True
+    payment_gateway_api_key: str = ""
+    payment_gateway_merchant_id: str = ""
+
+    # Government verification APIs (all stubbed until credentials are obtained)
+    govt_api_mock: bool = True
+    icp_api_url: str = ""
+    icp_api_key: str = ""
+    dha_api_url: str = ""
+    dha_api_key: str = ""
+
+    # AML / PEP screening (stubbed until provider contract is signed)
+    aml_mock: bool = True
+    pep_api_key: str = ""
+    pep_api_url: str = ""
+
+    model_config = SettingsConfigDict(env_file=Path(__file__).parent / ".env", case_sensitive=False, extra="ignore")
 
 
 @lru_cache()

@@ -1,0 +1,35 @@
+{% extends "_base.html" %}
+{% block doc_title %}Credit Note{% endblock %}
+{% block content %}
+<h2>Credit Note Details</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Credit Note No.</span><span class="field-val"><strong>{{ doc_reference }}</strong></span></div>
+    <div class="field-row"><span class="field-label">Policy No.</span><span class="field-val">{{ policy.policy_number }}</span></div>
+    <div class="field-row"><span class="field-label">Policyholder</span><span class="field-val">{{ application.customer_name }}</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Issue Date</span><span class="field-val">{{ generation_date }}</span></div>
+    <div class="field-row"><span class="field-label">Currency</span><span class="field-val">AED</span></div>
+    <div class="field-row"><span class="field-label">Plan</span><span class="field-val">{{ plan.name }}</span></div>
+  </div>
+</div>
+
+<h2>Credit Breakdown</h2>
+<table>
+  <thead><tr><th>Description</th><th>Amount (AED)</th></tr></thead>
+  <tbody>
+    {% if breakdown %}
+    <tr><td>Annual Premium (excl. VAT)</td><td>{{ breakdown.gross_premium_excl_tax }}</td></tr>
+    <tr><td>VAT @ 5%</td><td>{{ breakdown.vat_amount }}</td></tr>
+    <tr><td>Payment Processing Fee</td><td>{{ breakdown.psp_fee }}</td></tr>
+    <tr><td><strong>Total Credit</strong></td><td><strong>{{ breakdown.amount_payable }}</strong></td></tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<div class="box" style="margin-top:12px;">
+  <strong>Note:</strong> This credit note confirms the premium credit applied to your account upon issuance of Policy {{ policy.policy_number }}.
+  It is not a demand for payment.
+</div>
+{% endblock %}

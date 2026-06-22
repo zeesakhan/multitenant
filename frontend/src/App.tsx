@@ -16,6 +16,8 @@ import ClaimsPage from './pages/ClaimsPage'
 import ReportsPage from './pages/ReportsPage'
 import MembersPage from './pages/MembersPage'
 import PaymentsPage from './pages/PaymentsPage'
+import AmlDashboardPage from './pages/AmlDashboardPage'
+import GovtChecksPage from './pages/GovtChecksPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -69,6 +71,8 @@ export default function App() {
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/members" element={<MembersPage />} />
                 <Route path="/payments" element={<PaymentsPage />} />
+                <Route path="/aml" element={<AmlDashboardPage />} />
+                <Route path="/govt-checks" element={<GovtChecksPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>

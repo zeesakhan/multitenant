@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   Users, ShieldCheck, FileText, DollarSign,
-  CheckCircle, Activity, TrendingUp, Clock,
+  CheckCircle, Activity, TrendingUp, Clock, ShieldAlert, Globe,
 } from 'lucide-react'
-import { dashboardApi, healthApi } from '../services/api'
+import { dashboardApi, healthApi, amlApi, govtChecksApi } from '../services/api'
 import { useAuth } from '../store/authStore'
 import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -52,6 +53,16 @@ export default function DashboardPage() {
     queryFn: () => dashboardApi.stats(),
     retry: false,
   })
+  const amlAlertsQuery = useQuery({
+    queryKey: ['aml-alerts'],
+    queryFn: () => amlApi.listAlerts(),
+    retry: false,
+  })
+  const govtChecksQuery = useQuery({
+    queryKey: ['govt-checks-pending'],
+    queryFn: () => govtChecksApi.list({ status_filter: 'pending' }),
+    retry: false,
+  })
 
   const backendOnline = health.isSuccess
 
@@ -90,6 +101,34 @@ export default function DashboardPage() {
 
       {stats && (
         <>
+          {/* AML + Govt Check KPI cards */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Link to="/aml" className="card flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="p-3 rounded-xl bg-red-500 flex-shrink-0">
+                <ShieldAlert className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {amlAlertsQuery.data?.data?.data?.length ?? '—'}
+                </p>
+                <p className="text-sm text-gray-500">AML Flagged</p>
+                <p className="text-xs text-red-500 mt-0.5">Requires compliance review</p>
+              </div>
+            </Link>
+            <Link to="/govt-checks" className="card flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="p-3 rounded-xl bg-amber-500 flex-shrink-0">
+                <Globe className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {govtChecksQuery.data?.data?.data?.length ?? '—'}
+                </p>
+                <p className="text-sm text-gray-500">Govt Check Pending</p>
+                <p className="text-xs text-amber-600 mt-0.5">ICP / Sanctions checks</p>
+              </div>
+            </Link>
+          </div>
+
           {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard

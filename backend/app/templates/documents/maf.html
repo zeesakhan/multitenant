@@ -1,0 +1,103 @@
+{% extends "_base.html" %}
+{% block doc_title %}Medical Application Form{% endblock %}
+{% block content %}
+<h2>Policy Holder Information</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Full Name</span><span class="field-val">{{ application.customer_name }}</span></div>
+    <div class="field-row"><span class="field-label">Email</span><span class="field-val">{{ application.customer_email }}</span></div>
+    <div class="field-row"><span class="field-label">Employer</span><span class="field-val">{{ application.employer_name|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Occupation</span><span class="field-val">{{ application.occupation|default("-") }}</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Application No.</span><span class="field-val">{{ application.application_number }}</span></div>
+    <div class="field-row"><span class="field-label">Plan</span><span class="field-val">{{ plan.name|default("-") }}</span></div>
+    <div class="field-row"><span class="field-label">Cover Amount</span><span class="field-val">AED {{ application.cover_amount|default("1,000,000") }}</span></div>
+    <div class="field-row"><span class="field-label">Sponsor Type</span><span class="field-val">{{ application.sponsor_type|title }}</span></div>
+  </div>
+</div>
+
+<h2>Members</h2>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>Name</th><th>Relationship</th><th>DOB</th><th>Gender</th><th>Nationality</th><th>Emirates ID</th><th>Passport</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in members %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ m.first_name }} {{ m.last_name }}</td>
+      <td>{{ m.relationship|title }}</td>
+      <td>{{ m.date_of_birth }}</td>
+      <td>{{ m.gender|title }}</td>
+      <td>{{ m.nationality|default("-") }}</td>
+      <td>{{ m.emirates_id|default("-") }}</td>
+      <td>{{ m.passport_number|default("-") }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Health Declaration — 14-Point Medical Questionnaire</h2>
+<p style="font-size:8.5pt; color:#555; margin-bottom:6px;">
+  Please declare all pre-existing conditions. Non-disclosure may void coverage.
+</p>
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Details</th></tr></thead>
+  <tbody>
+  {% set questions = [
+    "Do you or any member suffer from diabetes, hypertension or cardiovascular disease?",
+    "Has any member undergone surgery or been hospitalised in the last 5 years?",
+    "Is any member currently under physician supervision for a chronic condition?",
+    "Does any member have a known allergy to medications or anaesthetics?",
+    "Has any member been diagnosed with cancer, tumour or growth?",
+    "Does any member have kidney, liver or digestive disorders?",
+    "Does any member have any musculoskeletal conditions (back pain, arthritis, etc.)?",
+    "Does any member have visual or hearing impairment or neurological conditions?",
+    "Does any member have HIV, hepatitis or blood-borne conditions?",
+    "Is any female member currently pregnant or planning pregnancy?",
+    "Does any member use tobacco, alcohol or controlled substances?",
+    "Has any member's insurance been declined, voided or rated in the past 3 years?",
+    "Does any member have a disability or special needs?",
+    "Are there any other conditions not mentioned above that require disclosure?"
+  ] %}
+  {% for member in members %}
+    {% if member.medical_questionnaire %}
+      {% for qa in member.medical_questionnaire %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ questions[loop.index0] if loop.index0 < questions|length else qa.question_id }}</td>
+        <td class="{{ 'yes' if qa.answer else 'no' }}">{{ "YES" if qa.answer else "NO" }}</td>
+        <td>{{ qa.details|default("-") }}</td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="4" style="color:#888; font-style:italic;">No questionnaire submitted for {{ member.first_name }} {{ member.last_name }}</td></tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Existing Health Insurance Declaration</h2>
+<div class="box">
+  <div class="field-row"><span class="field-label">Status</span><span class="field-val">
+    {% if application.existing_health_insurance == 'active_policy' %}Active Policy — must provide certificate of continuity{%
+    elif application.existing_health_insurance == 'expired_gt30' %}Expired &gt; 30 days ago — gap in coverage{%
+    elif application.existing_health_insurance == 'expired_lt30' %}Expired &lt; 30 days ago — continuity eligible{%
+    else %}No existing health insurance{% endif %}
+  </span></div>
+</div>
+
+<div class="signature-block">
+  <div><div class="sig-line">Policyholder Signature &amp; Date</div></div>
+  <div><div class="sig-line">Authorised Broker / Agent</div></div>
+  <div><div class="sig-line">Underwriter Stamp &amp; Date</div></div>
+</div>
+<div class="disclaimer">
+  I/We hereby declare that the above statements are true, complete and accurate to the best of my/our knowledge.
+  Any misrepresentation or omission may render the policy void and any claim invalid.
+  This form is valid for 30 days from the generation date.
+</div>
+{% endblock %}

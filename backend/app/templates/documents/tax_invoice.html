@@ -1,0 +1,57 @@
+{% extends "_base.html" %}
+{% block doc_title %}Tax Invoice{% endblock %}
+{% block content %}
+<h2>Invoice Details</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Invoice No.</span><span class="field-val"><strong>{{ doc_reference }}</strong></span></div>
+    <div class="field-row"><span class="field-label">Policy No.</span><span class="field-val">{{ policy.policy_number }}</span></div>
+    <div class="field-row"><span class="field-label">Invoice Date</span><span class="field-val">{{ generation_date }}</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Customer Name</span><span class="field-val">{{ application.customer_name }}</span></div>
+    <div class="field-row"><span class="field-label">Customer Email</span><span class="field-val">{{ application.customer_email }}</span></div>
+    <div class="field-row"><span class="field-label">TRN (Customer)</span><span class="field-val">{{ application.trn|default("N/A") }}</span></div>
+  </div>
+</div>
+
+<h2>Supplier Information</h2>
+<div class="box">
+  <div class="field-row"><span class="field-label">Supplier</span><span class="field-val">Adamjee Insurance (PJSC)</span></div>
+  <div class="field-row"><span class="field-label">TRN (Supplier)</span><span class="field-val">100123456700003</span></div>
+  <div class="field-row"><span class="field-label">Address</span><span class="field-val">Dubai, UAE</span></div>
+</div>
+
+<h2>Invoice Line Items</h2>
+<table>
+  <thead>
+    <tr><th>Description</th><th>Qty</th><th>Unit Price (AED)</th><th>VAT (5%)</th><th>Total (AED)</th></tr>
+  </thead>
+  <tbody>
+  {% if breakdown %}
+    <tr>
+      <td>{{ plan.name }} — Annual Health Insurance Premium</td>
+      <td>1</td>
+      <td>{{ breakdown.gross_premium_excl_tax }}</td>
+      <td>{{ breakdown.vat_amount }}</td>
+      <td>{{ breakdown.gross_premium_excl_tax }}</td>
+    </tr>
+    <tr>
+      <td>Payment Processing Fee</td>
+      <td>1</td>
+      <td>{{ breakdown.psp_fee }}</td>
+      <td>0.00</td>
+      <td>{{ breakdown.psp_fee }}</td>
+    </tr>
+    <tr>
+      <td><strong>TOTAL</strong></td>
+      <td></td>
+      <td></td>
+      <td><strong>{{ breakdown.vat_amount }}</strong></td>
+      <td><strong>{{ breakdown.amount_payable }}</strong></td>
+    </tr>
+  {% endif %}
+  </tbody>
+</table>
+<p style="font-size:8pt; color:#666; margin-top:8px;">VAT Registration No: 100123456700003 &nbsp;|&nbsp; Supply Type: Standard-Rated</p>
+{% endblock %}

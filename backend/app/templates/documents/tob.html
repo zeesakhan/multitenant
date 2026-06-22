@@ -1,0 +1,78 @@
+{% extends "_base.html" %}
+{% block doc_title %}Table of Benefits{% endblock %}
+{% block content %}
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Plan</span><span class="field-val"><strong>{{ plan.name }}</strong></span></div>
+    <div class="field-row"><span class="field-label">Quotation No.</span><span class="field-val">{{ application.application_number }}</span></div>
+    <div class="field-row"><span class="field-label">Policyholder</span><span class="field-val">{{ application.customer_name }}</span></div>
+    <div class="field-row"><span class="field-label">Quotation Date</span><span class="field-val">{{ generation_date }}</span></div>
+    <div class="field-row"><span class="field-label">Validity</span><span class="field-val">30 days from issue</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Annual Limit</span><span class="field-val">AED {{ application.cover_amount|default("1,000,000") }}</span></div>
+    <div class="field-row"><span class="field-label">TPA</span><span class="field-val">MedNet UAE</span></div>
+    <div class="field-row"><span class="field-label">Network</span><span class="field-val">{{ plan.name }}</span></div>
+    <div class="field-row"><span class="field-label">Geographic Scope</span><span class="field-val">UAE + Emergency Worldwide</span></div>
+    <div class="field-row"><span class="field-label">Insurer</span><span class="field-val">Adamjee Insurance (PJSC)</span></div>
+  </div>
+</div>
+
+<h2>Benefits Summary</h2>
+<table>
+  <thead>
+    <tr><th>Benefit</th><th>Annual Sub-Limit</th><th>Co-Payment</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+  {% for coverage in coverages %}
+  <tr>
+    <td><strong>{{ coverage.name }}</strong></td>
+    <td>{% if coverage.limit_amount %}AED {{ "{:,.0f}".format(coverage.limit_amount) }}{% else %}As per Annual Limit{% endif %}</td>
+    <td>{% if coverage.copay %}{{ coverage.copay }}%{% else %}Nil{% endif %}</td>
+    <td>{{ coverage.config.description|default("") if coverage.config else "" }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Premium Summary</h2>
+{% if breakdown %}
+<table>
+  <thead><tr><th>Component</th><th>Amount (AED)</th></tr></thead>
+  <tbody>
+    <tr><td>Gross Premium (excl. VAT)</td><td>{{ breakdown.gross_premium_excl_tax }}</td></tr>
+    <tr><td>VAT (5%)</td><td>{{ breakdown.vat_amount }}</td></tr>
+    <tr><td>Payment Processing Fee</td><td>{{ breakdown.psp_fee }}</td></tr>
+    <tr><td><strong>Total Amount Payable</strong></td><td><strong>{{ breakdown.amount_payable }}</strong></td></tr>
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Co-Payment Structure</h2>
+{% if application.co_payment_config %}
+<div class="box">
+  <div class="field-row"><span class="field-label">Outpatient Co-pay</span><span class="field-val">{{ application.co_payment_config.opt_pct|default(20) }}% (max AED {{ application.co_payment_config.opt_max_cap_aed|default(50) }}/visit)</span></div>
+  <div class="field-row"><span class="field-label">Pharmacy Co-pay</span><span class="field-val">{{ application.co_payment_config.pharmacy_pct|default(0) }}%</span></div>
+  <div class="field-row"><span class="field-label">Lab Co-pay</span><span class="field-val">{{ application.co_payment_config.lab_pct|default(0) }}%</span></div>
+  <div class="field-row"><span class="field-label">Physiotherapy Co-pay</span><span class="field-val">{{ application.co_payment_config.physio_pct|default(0) }}%</span></div>
+</div>
+{% else %}
+<div class="box">Standard co-payment applies: Outpatient 20% (max AED 50/visit), all other services nil.</div>
+{% endif %}
+
+<h2>Underwriting Terms</h2>
+<div class="box">
+  <ul style="padding-left:16px; font-size:9pt;">
+    <li>Cover commences 30 days after policy inception (waiting period applies to new members).</li>
+    <li>Declared pre-existing conditions covered subject to sub-limits above.</li>
+    <li>This quotation is subject to satisfactory completion of KYC and UAE regulatory checks.</li>
+    <li>All benefits subject to the master policy wordings filed with the UAE Insurance Authority.</li>
+  </ul>
+</div>
+
+<div class="disclaimer">
+  This Table of Benefits is issued for quotation purposes only and is valid for 30 days.
+  All benefits are subject to the terms, conditions and exclusions of the master policy document.
+  Adamjee Insurance PJSC — Licensed and regulated by the UAE Insurance Authority.
+</div>
+{% endblock %}

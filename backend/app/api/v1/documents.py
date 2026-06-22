@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from app.api.v1.dependencies import get_db, get_current_user, require_permissions, get_pagination
 from app.schemas.base import APIResponse, PaginatedResponse, PaginationParams
@@ -235,3 +235,193 @@ def validate_document(
         return APIResponse(data=DocumentUploadRead.model_validate(document))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# ── PDF Generation Endpoints ──────────────────────────────────────────────────
+
+def _pdf_response(pdf_bytes: bytes, filename: str) -> Response:
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _get_pdf_deps(db, tenant_id, application_id):
+    """Load application, members, plan objects needed for PDF context."""
+    from app.models.application import Application
+    from app.models.member import Member
+    from app.models.product import Plan
+
+    app = db.query(Application).filter(
+        Application.tenant_id == tenant_id, Application.id == application_id
+    ).first()
+    if not app:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    members = db.query(Member).filter(
+        Member.tenant_id == tenant_id, Member.application_id == application_id
+    ).all()
+
+    plan = db.query(Plan).filter(Plan.id == app.plan_id).first() if app.plan_id else None
+    return app, members, plan
+
+
+@router.post("/applications/{application_id}/generate-maf")
+def generate_maf(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate MAF PDF for an application."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    app, members, plan = _get_pdf_deps(db, tenant.id, application_id)
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    ctx = PdfContextBuilder.maf_context(app, members, plan, tenant_config)
+    pdf = render_pdf("maf.html", ctx)
+    return _pdf_response(pdf, f"MAF-{app.application_number}.pdf")
+
+
+@router.post("/applications/{application_id}/generate-kyc")
+def generate_kyc(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate KYC PDF for an application."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    app, members, plan = _get_pdf_deps(db, tenant.id, application_id)
+    principal = members[0] if members else None
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    ctx = PdfContextBuilder.kyc_context(app, principal, tenant_config)
+    pdf = render_pdf("kyc.html", ctx)
+    return _pdf_response(pdf, f"KYC-{app.application_number}.pdf")
+
+
+@router.post("/applications/{application_id}/generate-tob")
+def generate_tob(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate Table of Benefits PDF."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    from app.models.product import Coverage
+    app, members, plan = _get_pdf_deps(db, tenant.id, application_id)
+    coverages = db.query(Coverage).filter(Coverage.plan_id == app.plan_id).all() if app.plan_id else []
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    breakdown = app.premium_breakdown
+    ctx = PdfContextBuilder.tob_context(app, plan, coverages, breakdown, tenant_config)
+    pdf = render_pdf("tob.html", ctx)
+    return _pdf_response(pdf, f"ToB-{app.application_number}.pdf")
+
+
+@router.post("/policies/{policy_id}/generate-schedule")
+def generate_policy_schedule(
+    policy_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate Policy Schedule PDF."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    from app.models.policy import Policy
+    from app.models.application import Application
+    from app.models.member import Member
+    from app.models.product import Plan
+    from app.models.payment import Payment
+
+    policy = db.query(Policy).filter(Policy.tenant_id == tenant.id, Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found")
+
+    app = db.query(Application).filter(Application.id == policy.application_id).first()
+    members = db.query(Member).filter(Member.application_id == policy.application_id).all()
+    plan = db.query(Plan).filter(Plan.id == app.plan_id).first() if app and app.plan_id else None
+    payment = db.query(Payment).filter(Payment.policy_id == policy_id).order_by(Payment.created_at.desc()).first()
+
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    breakdown = app.premium_breakdown if app else None
+    ctx = PdfContextBuilder.policy_schedule_context(policy, app, members, plan, breakdown, payment, tenant_config)
+    pdf = render_pdf("policy_schedule.html", ctx)
+    return _pdf_response(pdf, f"PolicySchedule-{policy.policy_number}.pdf")
+
+
+@router.post("/policies/{policy_id}/generate-credit-note")
+def generate_credit_note(
+    policy_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate Credit Note PDF."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    from app.models.policy import Policy
+    from app.models.application import Application
+    from app.models.product import Plan
+
+    policy = db.query(Policy).filter(Policy.tenant_id == tenant.id, Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found")
+
+    app = db.query(Application).filter(Application.id == policy.application_id).first()
+    plan = db.query(Plan).filter(Plan.id == app.plan_id).first() if app and app.plan_id else None
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    ctx = PdfContextBuilder.credit_note_context(policy, app, plan, app.premium_breakdown if app else None, 1, tenant_config)
+    pdf = render_pdf("credit_note.html", ctx)
+    return _pdf_response(pdf, f"CreditNote-{policy.policy_number}.pdf")
+
+
+@router.post("/policies/{policy_id}/generate-tax-invoice")
+def generate_tax_invoice(
+    policy_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate Tax Invoice PDF."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    from app.models.policy import Policy
+    from app.models.application import Application
+    from app.models.product import Plan
+
+    policy = db.query(Policy).filter(Policy.tenant_id == tenant.id, Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found")
+
+    app = db.query(Application).filter(Application.id == policy.application_id).first()
+    plan = db.query(Plan).filter(Plan.id == app.plan_id).first() if app and app.plan_id else None
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    ctx = PdfContextBuilder.tax_invoice_context(policy, app, plan, app.premium_breakdown if app else None, 1, tenant_config)
+    pdf = render_pdf("tax_invoice.html", ctx)
+    return _pdf_response(pdf, f"TaxInvoice-{policy.policy_number}.pdf")
+
+
+@router.post("/policies/{policy_id}/generate-receipt")
+def generate_receipt(
+    policy_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    tenant: Tenant = Depends(require_permissions(DOCUMENT_CREATE)),
+):
+    """Generate Receipt Voucher PDF."""
+    from app.services.pdf_service import render_pdf, PdfContextBuilder
+    from app.models.policy import Policy
+    from app.models.application import Application
+    from app.models.product import Plan
+    from app.models.payment import Payment
+
+    policy = db.query(Policy).filter(Policy.tenant_id == tenant.id, Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Policy not found")
+
+    app = db.query(Application).filter(Application.id == policy.application_id).first()
+    plan = db.query(Plan).filter(Plan.id == app.plan_id).first() if app and app.plan_id else None
+    payment = db.query(Payment).filter(Payment.policy_id == policy_id).order_by(Payment.created_at.desc()).first()
+    tenant_config = {"company_name": "Adamjee Insurance"}
+    ctx = PdfContextBuilder.receipt_context(policy, app, plan, app.premium_breakdown if app else None, payment, 1, tenant_config)
+    pdf = render_pdf("receipt_voucher.html", ctx)
+    return _pdf_response(pdf, f"Receipt-{policy.policy_number}.pdf")

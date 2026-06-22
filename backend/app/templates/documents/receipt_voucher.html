@@ -1,0 +1,44 @@
+{% extends "_base.html" %}
+{% block doc_title %}Receipt Voucher{% endblock %}
+{% block content %}
+<h2>Payment Receipt</h2>
+<div class="two-col">
+  <div>
+    <div class="field-row"><span class="field-label">Receipt No.</span><span class="field-val"><strong>{{ doc_reference }}</strong></span></div>
+    <div class="field-row"><span class="field-label">Policy No.</span><span class="field-val">{{ policy.policy_number }}</span></div>
+    <div class="field-row"><span class="field-label">Policyholder</span><span class="field-val">{{ application.customer_name }}</span></div>
+  </div>
+  <div>
+    <div class="field-row"><span class="field-label">Receipt Date</span><span class="field-val">{{ generation_date }}</span></div>
+    <div class="field-row"><span class="field-label">Plan</span><span class="field-val">{{ plan.name }}</span></div>
+    <div class="field-row"><span class="field-label">Policy Period</span><span class="field-val">{{ policy.start_date }} – {{ policy.end_date }}</span></div>
+  </div>
+</div>
+
+<h2>Payment Details</h2>
+<table>
+  <thead><tr><th>Description</th><th>Amount (AED)</th></tr></thead>
+  <tbody>
+  {% if breakdown %}
+    <tr><td>Premium (excl. VAT)</td><td>{{ breakdown.gross_premium_excl_tax }}</td></tr>
+    <tr><td>VAT @ 5%</td><td>{{ breakdown.vat_amount }}</td></tr>
+    <tr><td>Processing Fee</td><td>{{ breakdown.psp_fee }}</td></tr>
+    <tr><td><strong>Total Received</strong></td><td><strong>{{ breakdown.amount_payable }}</strong></td></tr>
+  {% endif %}
+  </tbody>
+</table>
+
+{% if payment %}
+<div class="box" style="margin-top:10px;">
+  <div class="field-row"><span class="field-label">Transaction ID</span><span class="field-val">{{ payment.transaction_id|default("-") }}</span></div>
+  <div class="field-row"><span class="field-label">Payment Method</span><span class="field-val">{{ payment.payment_method|default("-")|title }}</span></div>
+  <div class="field-row"><span class="field-label">Payment Date</span><span class="field-val">{{ payment.payment_date|default(generation_date) }}</span></div>
+  <div class="field-row"><span class="field-label">Gateway Order Ref</span><span class="field-val">{{ payment.gateway_ref|default("-") }}</span></div>
+</div>
+{% endif %}
+
+<div class="box" style="background: #e8f4e8; border-color: #4caf50; margin-top:12px; text-align:center;">
+  <strong style="font-size:11pt; color:#2e7d32;">✓ PAYMENT CONFIRMED</strong><br/>
+  <span style="font-size:9pt;">Thank you. Your policy {{ policy.policy_number }} is active.</span>
+</div>
+{% endblock %}

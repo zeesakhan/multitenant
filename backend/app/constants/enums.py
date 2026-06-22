@@ -15,6 +15,8 @@ class UserType(str, Enum):
     CUSTOMER = "customer"
     UNDERWRITER = "underwriter"
     CLAIMS_MANAGER = "claims_manager"
+    COMPLIANCE_OFFICER = "compliance_officer"
+    FINANCE = "finance"
 
 
 class UserStatus(str, Enum):
@@ -56,6 +58,7 @@ class ApplicationStatus(str, Enum):
     REJECTED = "rejected"
     CANCELLED = "cancelled"
     ISSUED = "issued"
+    AML_HOLD = "aml_hold"
 
 
 class PolicyStatus(str, Enum):
@@ -121,17 +124,17 @@ class InvoiceStatus(str, Enum):
 
 
 class DocumentType(str, Enum):
-    POLICY_DOCUMENT = "POLICY_DOCUMENT"
-    QUOTE_DOCUMENT = "QUOTE_DOCUMENT"
-    APPLICATION_FORM = "APPLICATION_FORM"
-    INVOICE = "INVOICE"
-    ENDORSEMENT = "ENDORSEMENT"
-    RENEWAL_NOTICE = "RENEWAL_NOTICE"
-    CLAIMS_FORM = "CLAIMS_FORM"
-    MEDICAL_REPORT = "MEDICAL_REPORT"
-    ID_PROOF = "ID_PROOF"
-    ADDRESS_PROOF = "ADDRESS_PROOF"
-    INCOME_PROOF = "INCOME_PROOF"
+    POLICY_DOCUMENT = "policy_document"
+    QUOTE_DOCUMENT = "quote_document"
+    APPLICATION_FORM = "application_form"
+    INVOICE = "invoice"
+    ENDORSEMENT = "endorsement"
+    RENEWAL_NOTICE = "renewal_notice"
+    CLAIMS_FORM = "claims_form"
+    MEDICAL_REPORT = "medical_report"
+    ID_PROOF = "id_proof"
+    ADDRESS_PROOF = "address_proof"
+    INCOME_PROOF = "income_proof"
 
 
 class ClaimStatus(str, Enum):
@@ -233,10 +236,10 @@ class AuditAction(str, Enum):
 
 
 class Gender(str, Enum):
-    MALE = "M"
-    FEMALE = "F"
-    OTHER = "O"
-    UNDISCLOSED = "U"
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
 
 
 class CoverageType(str, Enum):
@@ -250,3 +253,79 @@ class CoverageType(str, Enum):
     PREVENTIVE = "preventive"
     EMERGENCY = "emergency"
     WELLNESS = "wellness"
+
+
+class AmlStatus(str, Enum):
+    CLEAR = "clear"
+    FLAGGED = "flagged"
+    HOLD = "hold"
+    CLEARED = "cleared"
+
+
+class GovtCheckStatus(str, Enum):
+    PENDING = "pending"
+    VERIFIED = "verified"
+    FAILED = "failed"
+    OVERRIDDEN = "overridden"
+
+
+class LoadingType(str, Enum):
+    UNDERWRITER = "underwriter"
+    BMI = "bmi"
+    OTHER = "other"
+    TPA = "tpa"
+    BROKER = "broker"
+    INSURER = "insurer"
+
+
+class AmlCheckType(str, Enum):
+    PEP = "pep"
+    SANCTIONS = "sanctions"
+    RISK_SCORE = "risk_score"
+    TRANSACTION = "transaction"
+
+
+class AmlRecordStatus(str, Enum):
+    PENDING = "pending"
+    CLEAR = "clear"
+    FLAGGED = "flagged"
+    HOLD = "hold"
+    CLEARED = "cleared"
+
+
+class GovtCheckType(str, Enum):
+    ICP = "icp"
+    DHA = "dha"
+    DOH = "doh"
+    OFAC = "ofac"
+    UN_SANCTIONS = "un_sanctions"
+    UAE_CABINET_74 = "uae_cabinet_74"
+
+
+class GovtVerificationStatus(str, Enum):
+    PENDING = "pending"
+    VERIFIED = "verified"
+    MISMATCH = "mismatch"
+    NOT_FOUND = "not_found"
+    FAILED = "failed"
+    OVERRIDDEN = "overridden"
+
+
+class SponsorType(str, Enum):
+    INDIVIDUAL = "individual"
+    CORPORATE = "corporate"
+
+
+class StrStatus(str, Enum):
+    DRAFT = "draft"
+    PENDING_APPROVAL = "pending_approval"
+    APPROVED = "approved"
+    FILED = "filed"
+    CLOSED = "closed"
+
+
+class ExistingHealthInsurance(str, Enum):
+    ACTIVE_POLICY = "active_policy"
+    EXPIRED_GT30 = "expired_gt30"
+    EXPIRED_LT30 = "expired_lt30"
+    NONE = "none"
