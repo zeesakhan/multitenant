@@ -109,9 +109,9 @@ export default function ReportsPage() {
 
       {summary && (
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <KpiCard label="Monthly Premium Due" value={`AED AED {fmt(summary.monthly_premium_due)}`} color="text-gray-900" />
-          <KpiCard label="Collected This Month" value={`AED AED {fmt(summary.collected_this_month)}`} color="text-green-700" />
-          <KpiCard label="Claims Paid This Month" value={`AED AED {fmt(summary.claims_paid_this_month)}`} color="text-blue-700" />
+          <KpiCard label="Monthly Premium Due" value={`AED ${fmt(summary.monthly_premium_due)}`} color="text-gray-900" />
+          <KpiCard label="Collected This Month" value={`AED ${fmt(summary.collected_this_month)}`} color="text-green-700" />
+          <KpiCard label="Claims Paid This Month" value={`AED ${fmt(summary.claims_paid_this_month)}`} color="text-blue-700" />
         </div>
       )}
 

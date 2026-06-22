@@ -146,7 +146,7 @@ export default function PortalClaimsPage() {
                   </td>
                   <td className="px-4 py-3 font-semibold text-gray-900">AED {fmt(String(c.claimed_amount))}</td>
                   <td className="px-4 py-3 text-gray-600">
-                    {c.approved_amount ? `AED AED {fmt(String(c.approved_amount))}` : '—'}
+                    {c.approved_amount ? `AED ${fmt(String(c.approved_amount))}` : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_COLORS[String(c.status)] ?? 'bg-gray-100 text-gray-500'}`}>

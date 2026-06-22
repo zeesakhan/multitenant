@@ -121,10 +121,10 @@ export default function PortalPolicyPage() {
                           {COVERAGE_TYPE_LABELS[String(item.coverage_type ?? '')] ?? String(item.coverage_type ?? '—')}
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {item.limit_amount ? `AED AED {fmt(String(item.limit_amount))}` : '—'}
+                          {item.limit_amount ? `AED ${fmt(String(item.limit_amount))}` : '—'}
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {item.copay ? `AED AED {fmt(String(item.copay))}` : '—'}
+                          {item.copay ? `AED ${fmt(String(item.copay))}` : '—'}
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-900">AED {fmt(String(item.premium))}</td>
                         <td className="px-4 py-3">

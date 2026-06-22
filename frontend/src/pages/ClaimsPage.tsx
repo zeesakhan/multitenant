@@ -275,7 +275,7 @@ function ClaimDetailModal({ claimId, onClose }: { claimId: string; onClose: () =
               <button onClick={() => payMut.mutate()} disabled={isWorking}
                 className="btn-primary w-full justify-center gap-2 bg-emerald-600 hover:bg-emerald-700">
                 <DollarSign className="w-4 h-4" />
-                {payMut.isPending ? 'Processing...' : `Pay AED AED {Number(claim.approved_amount ?? claim.claimed_amount).toFixed(2)}`}
+                {payMut.isPending ? 'Processing...' : `Pay AED ${Number(claim.approved_amount ?? claim.claimed_amount).toFixed(2)}`}
               </button>
             )}
 
@@ -386,7 +386,7 @@ export default function ClaimsPage() {
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-900">AED {Number(c.claimed_amount).toFixed(2)}</td>
                   <td className="px-4 py-3 text-gray-600">
-                    {c.approved_amount ? `AED AED {Number(c.approved_amount).toFixed(2)}` : '—'}
+                    {c.approved_amount ? `AED ${Number(c.approved_amount).toFixed(2)}` : '—'}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3">
