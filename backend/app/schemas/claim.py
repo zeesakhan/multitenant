@@ -10,16 +10,16 @@ class ClaimCreate(BaseModel):
     claim_type: str
     incident_date: date
     description: str = Field(..., min_length=10)
-    claimed_amount: Decimal = Field(..., gt=0, decimal_places=2)
+    claimed_amount: Decimal = Field(..., gt=0)
 
 
 class ClaimUpdate(BaseModel):
     description: Optional[str] = None
-    claimed_amount: Optional[Decimal] = Field(None, gt=0, decimal_places=2)
+    claimed_amount: Optional[Decimal] = Field(None, gt=0)
 
 
 class ClaimReview(BaseModel):
-    approved_amount: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    approved_amount: Optional[Decimal] = Field(None, ge=0)
     rejection_reason: Optional[str] = None
 
 

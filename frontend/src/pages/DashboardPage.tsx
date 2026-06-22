@@ -140,7 +140,7 @@ export default function DashboardPage() {
             />
             <StatCard
               label="Monthly Premium"
-              value={`$${fmt(stats.policies.monthly_premium)}`}
+              value={`AED ${fmt(stats.policies.monthly_premium)}`}
               sub="from active policies"
               icon={TrendingUp}
               color="bg-emerald-500"
@@ -154,7 +154,7 @@ export default function DashboardPage() {
             />
             <StatCard
               label="Collected"
-              value={`$${fmt(stats.payments.total_collected)}`}
+              value={`AED ${fmt(stats.payments.total_collected)}`}
               sub={`${stats.payments.total} payments`}
               icon={DollarSign}
               color="bg-blue-500"
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                     {stats.recent_payments.map((p) => (
                       <div key={p.id} className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-800">${fmt(p.amount)}</p>
+                          <p className="text-sm font-medium text-gray-800">AED {fmt(p.amount)}</p>
                           <p className="text-xs text-gray-400">{METHOD_LABELS[p.method] ?? p.method}</p>
                         </div>
                         <p className="text-xs text-gray-400">

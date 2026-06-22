@@ -225,7 +225,7 @@ function QuoteDetailModal({ quoteId, onClose }: { quoteId: string; onClose: () =
               ['Quote #', quote.quote_number],
               ['Customer', quote.customer_name],
               ['Email', quote.customer_email],
-              ['Premium', `$${Number(quote.total_premium).toFixed(2)}/mo`],
+              ['Premium', `AED ${Number(quote.total_premium).toFixed(2)}/mo`],
               ['Status', null],
               ['Valid Until', new Date(quote.valid_until).toLocaleDateString()],
             ].map(([label, value]) => (

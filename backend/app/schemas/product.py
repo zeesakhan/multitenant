@@ -49,7 +49,7 @@ class PlanCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     code: str = Field(..., min_length=1, max_length=100)
     plan_type: PlanType = PlanType.INDIVIDUAL
-    base_premium: Decimal = Field(..., decimal_places=2, gt=0)
+    base_premium: Decimal = Field(..., gt=0)
     description: Optional[str] = Field(None, max_length=1000)
     coverage_details: Optional[Dict[str, Any]] = None
     included_services: Optional[Dict[str, Any]] = None
@@ -60,7 +60,7 @@ class PlanCreate(BaseModel):
 class PlanUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     plan_type: Optional[PlanType] = None
-    base_premium: Optional[Decimal] = Field(None, decimal_places=2, gt=0)
+    base_premium: Optional[Decimal] = Field(None, gt=0)
     description: Optional[str] = Field(None, max_length=1000)
     coverage_details: Optional[Dict[str, Any]] = None
     included_services: Optional[Dict[str, Any]] = None

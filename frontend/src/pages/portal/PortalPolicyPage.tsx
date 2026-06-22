@@ -67,7 +67,7 @@ export default function PortalPolicyPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Premium</p>
-                <p className="text-sm font-semibold text-gray-900">${fmt(String(policy.total_premium))}</p>
+                <p className="text-sm font-semibold text-gray-900">AED {fmt(String(policy.total_premium))}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Effective</p>
@@ -121,12 +121,12 @@ export default function PortalPolicyPage() {
                           {COVERAGE_TYPE_LABELS[String(item.coverage_type ?? '')] ?? String(item.coverage_type ?? '—')}
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {item.limit_amount ? `$${fmt(String(item.limit_amount))}` : '—'}
+                          {item.limit_amount ? `AED AED {fmt(String(item.limit_amount))}` : '—'}
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {item.copay ? `$${fmt(String(item.copay))}` : '—'}
+                          {item.copay ? `AED AED {fmt(String(item.copay))}` : '—'}
                         </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">${fmt(String(item.premium))}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">AED {fmt(String(item.premium))}</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${
                             item.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'

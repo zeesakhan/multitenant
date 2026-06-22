@@ -34,10 +34,15 @@ function strStatusBadge(status: string) {
 interface AmlAlert {
   id: string
   application_id: string
-  check_type: string
+  application_number?: string
+  customer_name?: string
+  check_type?: string
   status: string
+  aml_status?: string
+  aml_risk_score?: string | number
   risk_score?: number
-  checked_at: string
+  checked_at?: string
+  created_at?: string
 }
 
 interface StrRecord {
@@ -183,7 +188,7 @@ export default function AmlDashboardPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['str-records'] }); toast('STR filed with regulator.') },
   })
 
-  const holdAlerts = alerts.filter((a) => a.status === 'hold' || a.status === 'flagged')
+  const holdAlerts = alerts.filter((a) => a.aml_status === 'hold' || a.aml_status === 'flagged' || a.status === 'hold' || a.status === 'flagged')
   const strDraft = strRecords.filter((s) => s.status === 'draft').length
   const strPendingApproval = strRecords.filter((s) => s.status === 'pending_approval').length
   const strFiled = strRecords.filter((s) => s.status === 'filed').length
@@ -234,32 +239,33 @@ export default function AmlDashboardPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  {['Application ID', 'Check Type', 'Status', 'Risk Score', 'Date', 'Actions'].map((h) => (
+                  {['Application', 'Customer', 'AML Status', 'Risk Score', 'Date', 'Actions'].map((h) => (
                     <th key={h} className="text-left px-4 py-2.5 font-medium text-gray-600 text-xs">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {holdAlerts.map((a) => {
-                  const band = a.risk_score ? riskBand(a.risk_score) : null
+                  const score = a.aml_risk_score ?? a.risk_score
+                  const band = score ? riskBand(Number(score)) : null
                   return (
                     <tr key={a.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{a.application_id.slice(0, 8)}…</td>
-                      <td className="px-4 py-2.5 capitalize text-gray-700">{a.check_type?.replace(/_/g, ' ')}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{a.application_number ?? a.application_id.slice(0, 8) + '…'}</td>
+                      <td className="px-4 py-2.5 text-sm font-medium text-gray-800">{a.customer_name ?? '—'}</td>
                       <td className="px-4 py-2.5">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-                          a.status === 'hold' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                        }`}>{a.status}</span>
+                          (a.aml_status ?? a.status) === 'hold' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                        }`}>{(a.aml_status ?? a.status).replace(/_/g, ' ')}</span>
                       </td>
                       <td className="px-4 py-2.5">
                         {band
                           ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${band.color}`}>
-                              {a.risk_score} — {band.label}
+                              {score} — {band.label}
                             </span>
                           : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-gray-500">
-                        {new Date(a.checked_at).toLocaleDateString()}
+                        {a.checked_at ? new Date(a.checked_at).toLocaleDateString() : a.created_at ? new Date(a.created_at).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-2.5">
                         <button

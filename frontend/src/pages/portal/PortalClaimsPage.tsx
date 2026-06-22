@@ -144,9 +144,9 @@ export default function PortalClaimsPage() {
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {c.incident_date ? new Date(String(c.incident_date)).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">${fmt(String(c.claimed_amount))}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">AED {fmt(String(c.claimed_amount))}</td>
                   <td className="px-4 py-3 text-gray-600">
-                    {c.approved_amount ? `$${fmt(String(c.approved_amount))}` : '—'}
+                    {c.approved_amount ? `AED AED {fmt(String(c.approved_amount))}` : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_COLORS[String(c.status)] ?? 'bg-gray-100 text-gray-500'}`}>

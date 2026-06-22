@@ -5,6 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-23 (Phase 3 — Demo Preparation, UAT, Currency Fix, AED Compliance)
+
+### Added
+- **Demo data seed** (`/tmp/seed_demo_sql.py`): 7 realistic applications, 3 active policies, 3 payments (AED 16,550 total), 2 AML records (1 MEDIUM, 1 HIGH), 3 govt verification records, 1 pending ICP check, 7 notifications (4 unread) — full Adamjee showcase dataset
+- **Demo presentation** (`docs/ADAMJEE_DEMO_PRESENTATION.md`): Professional 10-section document covering architecture, features, compliance, premium breakdown, integration points, and roadmap
+- **Demo scenarios guide** (`docs/ADAMJEE_DEMO_SCENARIOS.md`): 10 step-by-step demonstration scenarios with talking points, data tables, and Q&A
+
+### Fixed
+- **AML Dashboard** (`AmlDashboardPage.tsx`): `holdAlerts` filter was checking `a.status` (application status) instead of `a.aml_status` — AML alerts were showing 0 even with 2 flagged applications in DB
+- **AML Dashboard** (`AmlDashboardPage.tsx`): Table now shows `application_number` and `customer_name` instead of raw UUIDs; risk score uses `aml_risk_score` field from alerts API response
+- **`AmlAlert` TypeScript interface** extended with optional fields `application_number`, `customer_name`, `aml_status`, `aml_risk_score`, `created_at` to match actual API response shape
+- **`BuyProductsPage.tsx`**: Last remaining `$` USD symbol replaced with `AED` in plan card base premium display (line 119)
+- **Vite proxy** (`vite.config.ts`): Changed target from `http://localhost:8000` to `http://localhost:8001` — root cause of all browser API 404s
+- **`app/models/__init__.py`**: Added all domain model imports (`Product`, `Plan`, `Member`, `Application`, `Policy`, `Claim`, `Payment`, etc.) to resolve SQLAlchemy string-based relationship lookups
+
+### Currency (AED) — Complete Sweep
+All USD `$` symbols replaced with `AED` across the frontend:
+- `DashboardPage.tsx`: Recent payments, monthly premium KPI
+- `ReportsPage.tsx`: Premium due, collected amounts (3 instances)
+- `ClaimsPage.tsx`: Total claimed and approved amounts
+- `ProductsPage.tsx`: Base premium table cell
+- `BuyProductsPage.tsx`: Plan card base premium (now complete)
+- `BuyApplyPage.tsx`: Premium display lines
+- `PortalDashboardPage.tsx`, `PortalPolicyPage.tsx`, `PortalPaymentsPage.tsx`, `PortalClaimsPage.tsx`: All monetary displays
+
+---
+
 ## [Unreleased] — 2026-06-23
 
 ### Added — Phase 1–2: UAE Compliance, AML, Govt Checks, PDF Generation, Enhanced Staff Portal

@@ -109,9 +109,9 @@ export default function ReportsPage() {
 
       {summary && (
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <KpiCard label="Monthly Premium Due" value={`$${fmt(summary.monthly_premium_due)}`} color="text-gray-900" />
-          <KpiCard label="Collected This Month" value={`$${fmt(summary.collected_this_month)}`} color="text-green-700" />
-          <KpiCard label="Claims Paid This Month" value={`$${fmt(summary.claims_paid_this_month)}`} color="text-blue-700" />
+          <KpiCard label="Monthly Premium Due" value={`AED AED {fmt(summary.monthly_premium_due)}`} color="text-gray-900" />
+          <KpiCard label="Collected This Month" value={`AED AED {fmt(summary.collected_this_month)}`} color="text-green-700" />
+          <KpiCard label="Claims Paid This Month" value={`AED AED {fmt(summary.claims_paid_this_month)}`} color="text-blue-700" />
         </div>
       )}
 
@@ -152,7 +152,7 @@ export default function ReportsPage() {
                   <div key={row.month}>
                     <div className="flex justify-between text-xs text-gray-600 mb-1">
                       <span>{row.month}</span>
-                      <span className="font-semibold text-emerald-700">${fmt(row.collected)}</span>
+                      <span className="font-semibold text-emerald-700">AED {fmt(row.collected)}</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2">
                       <div className="h-2 rounded-full bg-emerald-500"
@@ -178,7 +178,7 @@ export default function ReportsPage() {
                   <div key={String(row.month)} className="space-y-1.5">
                     <div className="flex justify-between text-xs">
                       <span className="font-medium text-gray-700">{String(row.month)}</span>
-                      <span className="text-gray-500">${fmt(Number(row.total_claimed ?? 0))} claimed</span>
+                      <span className="text-gray-500">AED {fmt(Number(row.total_claimed ?? 0))} claimed</span>
                     </div>
                     <MiniBar label={`${row.total} total`} value={Number(row.total ?? 0)} max={maxClaimTotal} color="bg-red-400" />
                   </div>

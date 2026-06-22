@@ -207,7 +207,7 @@ export default function BuyApplyPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-800 truncate">{plan.name}</p>
-            <p className="text-xs text-gray-400">{productName} · from ${fmt(plan.base_premium)}/yr</p>
+            <p className="text-xs text-gray-400">{productName} · from AED {fmt(plan.base_premium)}/yr</p>
           </div>
           <button
             onClick={() => navigate(-1)}
@@ -301,7 +301,7 @@ export default function BuyApplyPage() {
                 <p className="text-xs text-emerald-700">Primary Insured</p>
               </div>
               <span className="ml-auto text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                ${fmt(parseFloat(plan.base_premium))}/yr
+                AED {fmt(parseFloat(plan.base_premium))}/yr
               </span>
             </div>
 
@@ -318,7 +318,7 @@ export default function BuyApplyPage() {
                       <p className="text-xs text-gray-400">{RELATIONSHIP_LABELS[d.relationship]}</p>
                     </div>
                     <span className="text-xs text-gray-500">
-                      ${fmt(parseFloat(plan.base_premium) * (PREMIUM_FACTORS[d.relationship] ?? 0.5))}/yr
+                      AED {fmt(parseFloat(plan.base_premium) * (PREMIUM_FACTORS[d.relationship] ?? 0.5))}/yr
                     </span>
                     <button onClick={() => removeDependent(i)} className="text-red-400 hover:text-red-600 p-1">
                       <Trash2 className="w-4 h-4" />
@@ -389,7 +389,7 @@ export default function BuyApplyPage() {
             <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 mb-4 text-sm">
               <div className="flex justify-between text-gray-500 mb-1">
                 <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {1 + dependents.length} member{(1 + dependents.length) !== 1 ? 's' : ''}</span>
-                <span className="font-bold text-gray-900">${fmt(calcLocalQuote().total_premium)}/yr</span>
+                <span className="font-bold text-gray-900">AED {fmt(calcLocalQuote().total_premium)}/yr</span>
               </div>
               <p className="text-xs text-gray-400">Estimated premium · final quote on next step</p>
             </div>
@@ -423,7 +423,7 @@ export default function BuyApplyPage() {
                   <p className="text-sm text-emerald-700 font-medium">Annual Premium</p>
                   <p className="text-xs text-emerald-600">{quote.breakdown.length} member{quote.breakdown.length !== 1 ? 's' : ''} covered</p>
                 </div>
-                <p className="text-3xl font-extrabold text-emerald-700">${fmt(quote.total_premium)}</p>
+                <p className="text-3xl font-extrabold text-emerald-700">AED {fmt(quote.total_premium)}</p>
               </div>
 
               {/* Members breakdown */}
@@ -434,7 +434,7 @@ export default function BuyApplyPage() {
                     <span className="text-gray-700">{b.first_name} {b.last_name}
                       <span className="text-xs text-gray-400 ml-2 capitalize">{RELATIONSHIP_LABELS[b.relationship] ?? b.relationship}</span>
                     </span>
-                    <span className="font-semibold text-gray-900">${fmt(b.premium)}</span>
+                    <span className="font-semibold text-gray-900">AED {fmt(b.premium)}</span>
                   </div>
                 ))}
               </div>
@@ -448,7 +448,7 @@ export default function BuyApplyPage() {
                       <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                         <span className="font-medium">{c.name}</span>
-                        {c.limit_amount && <span className="ml-auto text-gray-400">up to ${fmt(c.limit_amount)}</span>}
+                        {c.limit_amount && <span className="ml-auto text-gray-400">up to AED {fmt(c.limit_amount)}</span>}
                       </div>
                     ))}
                   </div>
@@ -517,7 +517,7 @@ export default function BuyApplyPage() {
               </div>
               <div className="flex justify-between text-sm border-t border-gray-200 pt-2 mt-2">
                 <span className="text-gray-600 font-medium">Annual Premium</span>
-                <span className="font-bold text-emerald-700 text-lg">${fmt(confirmation.total_premium)}</span>
+                <span className="font-bold text-emerald-700 text-lg">AED {fmt(confirmation.total_premium)}</span>
               </div>
             </div>
 

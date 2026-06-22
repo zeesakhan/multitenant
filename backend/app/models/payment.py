@@ -14,12 +14,12 @@ class Payment(TenantModel):
     policy_id: Mapped[str] = mapped_column(ForeignKey("policies.id", ondelete="RESTRICT"), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(PaymentStatus, name="payment_status_enum"),
+        Enum(PaymentStatus, name="payment_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=PaymentStatus.SUCCESS,
         nullable=False,
     )
     method: Mapped[str] = mapped_column(
-        Enum(PaymentMethod, name="payment_method_enum"),
+        Enum(PaymentMethod, name="payment_method_enum", values_callable=lambda x: [e.value for e in x]),
         default=PaymentMethod.BANK_TRANSFER,
         nullable=False,
     )

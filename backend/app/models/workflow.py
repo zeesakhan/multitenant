@@ -16,7 +16,7 @@ class WorkflowDefinition(TenantModel):
     transitions: Mapped[dict] = mapped_column(JSON, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(WorkflowStatus, name="workflow_status_enum"),
+        Enum(WorkflowStatus, name="workflow_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=WorkflowStatus.ACTIVE,
         nullable=False,
     )
@@ -41,7 +41,7 @@ class WorkflowInstance(TenantModel):
     current_state: Mapped[str] = mapped_column(String(100), nullable=False)
     context: Mapped[dict] = mapped_column(JSON, nullable=True, default=dict)
     status: Mapped[str] = mapped_column(
-        Enum(WorkflowInstanceStatus, name="workflow_instance_status_enum"),
+        Enum(WorkflowInstanceStatus, name="workflow_instance_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=WorkflowInstanceStatus.IN_PROGRESS,
         nullable=False,
     )

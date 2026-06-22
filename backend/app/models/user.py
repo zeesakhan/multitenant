@@ -56,12 +56,12 @@ class User(TenantModel):
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     user_type: Mapped[str] = mapped_column(
-        Enum(UserType, name="user_type_enum"),
+        Enum(UserType, name="user_type_enum", values_callable=lambda x: [e.value for e in x]),
         default=UserType.AGENT,
         nullable=False,
     )
     status: Mapped[str] = mapped_column(
-        Enum(UserStatus, name="user_status_enum"),
+        Enum(UserStatus, name="user_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=UserStatus.ACTIVE,
         nullable=False,
     )

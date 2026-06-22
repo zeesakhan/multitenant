@@ -32,7 +32,7 @@ class DocumentUpload(TenantModel):
     file_size: Mapped[int] = mapped_column(Integer, nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     document_type: Mapped[str] = mapped_column(
-        Enum(DocumentType, name="document_type_enum"),
+        Enum(DocumentType, name="document_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     entity_type: Mapped[str] = mapped_column(String(100), nullable=False)

@@ -14,7 +14,7 @@ class Product(TenantModel):
     code: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     status: Mapped[str] = mapped_column(
-        Enum(ProductStatus, name="product_status_enum"),
+        Enum(ProductStatus, name="product_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=ProductStatus.DRAFT,
         nullable=False,
     )
@@ -36,7 +36,7 @@ class Plan(TenantModel):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str] = mapped_column(String(100), nullable=False)
     plan_type: Mapped[str] = mapped_column(
-        Enum(PlanType, name="plan_type_enum"),
+        Enum(PlanType, name="plan_type_enum", values_callable=lambda x: [e.value for e in x]),
         default=PlanType.INDIVIDUAL,
         nullable=False,
     )
@@ -63,7 +63,7 @@ class Coverage(TenantModel):
     plan_id: Mapped[str] = mapped_column(ForeignKey("plans.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     coverage_type: Mapped[str] = mapped_column(
-        Enum(CoverageType, name="coverage_type_enum"),
+        Enum(CoverageType, name="coverage_type_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     limit_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)

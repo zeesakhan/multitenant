@@ -12,7 +12,7 @@ class Tenant(SystemModel):
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(TenantStatus, name="tenant_status_enum"),
+        Enum(TenantStatus, name="tenant_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=TenantStatus.ACTIVE,
         nullable=False,
     )

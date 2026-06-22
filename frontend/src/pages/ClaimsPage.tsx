@@ -195,10 +195,10 @@ function ClaimDetailModal({ claimId, onClose }: { claimId: string; onClose: () =
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500">Claimed</p>
-              <p className="text-2xl font-bold text-gray-900">${Number(claim.claimed_amount).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">AED {Number(claim.claimed_amount).toFixed(2)}</p>
               {claim.approved_amount && (
                 <p className="text-sm text-green-700 font-medium">
-                  Approved: ${Number(claim.approved_amount).toFixed(2)}
+                  Approved: AED {Number(claim.approved_amount).toFixed(2)}
                 </p>
               )}
             </div>
@@ -275,7 +275,7 @@ function ClaimDetailModal({ claimId, onClose }: { claimId: string; onClose: () =
               <button onClick={() => payMut.mutate()} disabled={isWorking}
                 className="btn-primary w-full justify-center gap-2 bg-emerald-600 hover:bg-emerald-700">
                 <DollarSign className="w-4 h-4" />
-                {payMut.isPending ? 'Processing...' : `Pay $${Number(claim.approved_amount ?? claim.claimed_amount).toFixed(2)}`}
+                {payMut.isPending ? 'Processing...' : `Pay AED AED {Number(claim.approved_amount ?? claim.claimed_amount).toFixed(2)}`}
               </button>
             )}
 
@@ -384,9 +384,9 @@ export default function ClaimsPage() {
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {new Date(c.incident_date).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">${Number(c.claimed_amount).toFixed(2)}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">AED {Number(c.claimed_amount).toFixed(2)}</td>
                   <td className="px-4 py-3 text-gray-600">
-                    {c.approved_amount ? `$${Number(c.approved_amount).toFixed(2)}` : '—'}
+                    {c.approved_amount ? `AED AED {Number(c.approved_amount).toFixed(2)}` : '—'}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3">

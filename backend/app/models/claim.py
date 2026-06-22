@@ -13,9 +13,9 @@ class Claim(TenantModel):
     claim_number: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     policy_id: Mapped[str] = mapped_column(ForeignKey("policies.id", ondelete="RESTRICT"), nullable=False)
     member_id: Mapped[Optional[str]] = mapped_column(ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
-    claim_type: Mapped[str] = mapped_column(Enum(ClaimType, name="claim_type_enum"), nullable=False)
+    claim_type: Mapped[str] = mapped_column(Enum(ClaimType, name="claim_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(ClaimStatus, name="claim_status_enum"),
+        Enum(ClaimStatus, name="claim_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=ClaimStatus.SUBMITTED,
         nullable=False,
     )

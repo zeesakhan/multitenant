@@ -94,7 +94,7 @@ export default function PortalDashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
           <div className="p-3 bg-blue-100 rounded-xl"><CreditCard className="w-5 h-5 text-blue-600" /></div>
           <div>
-            <p className="text-xl font-bold text-gray-900">${fmt(totalPaid)}</p>
+            <p className="text-xl font-bold text-gray-900">AED {fmt(totalPaid)}</p>
             <p className="text-xs text-gray-500">Total Paid</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function PortalDashboardPage() {
               {recentPayments.map((p) => (
                 <div key={String(p.id)} className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">${fmt(String(p.amount))}</p>
+                    <p className="text-sm font-semibold text-gray-800">AED {fmt(String(p.amount))}</p>
                     <p className="text-xs text-gray-400">{METHOD_LABELS[String(p.method)] ?? String(p.method)}</p>
                   </div>
                   <p className="text-xs text-gray-400">{p.paid_at ? new Date(String(p.paid_at)).toLocaleDateString() : '—'}</p>

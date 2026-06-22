@@ -20,7 +20,7 @@ class Policy(TenantModel):
     member_count: Mapped[int] = mapped_column(nullable=False, default=1)
     total_premium: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[str] = mapped_column(
-        Enum(PolicyStatus, name="policy_status_enum"),
+        Enum(PolicyStatus, name="policy_status_enum", values_callable=lambda x: [e.value for e in x]),
         default=PolicyStatus.ACTIVE,
         nullable=False,
     )

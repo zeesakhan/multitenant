@@ -315,7 +315,7 @@ function ProductPlansModal({ product, onClose }: { product: Product; onClose: ()
                     <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.code}</td>
                     <td className="px-4 py-3">{planTypeBadge(p.plan_type)}</td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">${Number(p.base_premium).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-gray-700 font-medium">AED {Number(p.base_premium).toFixed(2)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                         {p.coverages?.length ?? 0}

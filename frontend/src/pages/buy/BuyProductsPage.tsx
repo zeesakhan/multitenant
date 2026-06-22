@@ -116,7 +116,7 @@ export default function BuyProductsPage() {
                     <div className="mb-4">
                       <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Starting from</p>
                       <p className="text-3xl font-extrabold text-gray-900">
-                        ${fmt(plan.base_premium)}
+                        AED {fmt(plan.base_premium)}
                         <span className="text-sm font-normal text-gray-400">/yr</span>
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
@@ -134,7 +134,7 @@ export default function BuyProductsPage() {
                               <span className="font-medium">{c.name}</span>
                               {c.limit_amount && (
                                 <span className="ml-auto text-gray-400 whitespace-nowrap">
-                                  up to ${fmt(c.limit_amount)}
+                                  up to AED {fmt(c.limit_amount)}
                                 </span>
                               )}
                             </li>

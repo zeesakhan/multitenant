@@ -43,7 +43,7 @@ export default function PortalPaymentsPage() {
           <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
             <TrendingUp className="w-4 h-4" /> Total paid
           </div>
-          <p className="text-2xl font-bold text-gray-900">${fmt(totalPaid)}</p>
+          <p className="text-2xl font-bold text-gray-900">AED {fmt(totalPaid)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
@@ -72,7 +72,7 @@ export default function PortalPaymentsPage() {
               {payments.map((p) => (
                 <tr key={String(p.id)} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-gray-700">{String(p.payment_number)}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">${fmt(String(p.amount))}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">AED {fmt(String(p.amount))}</td>
                   <td className="px-4 py-3 text-gray-600">{METHOD_LABELS[String(p.method)] ?? String(p.method)}</td>
                   <td className="px-4 py-3 text-xs text-gray-500">{String(p.reference ?? '—')}</td>
                   <td className="px-4 py-3">

@@ -52,7 +52,7 @@ def dt(y, m, d) -> datetime:
     return datetime(y, m, d, tzinfo=timezone.utc)
 
 
-engine = create_engine("sqlite:///./dev.db", connect_args={"check_same_thread": False})
+import os; engine = create_engine(os.environ.get("DATABASE_URL", "sqlite:///./dev.db"))
 Session = sessionmaker(bind=engine)
 db = Session()
 
@@ -80,14 +80,17 @@ else:
 
 TID = TESTCO.id
 
-# New staff users (admin + agent already exist)
+# Create all staff users if they don't exist
 for email, pw, utype, fn, ln in [
-    ("underwriter@testco.com", "underwriter123", UserType.UNDERWRITER,    "Rachel", "Green"),
-    ("claims@testco.com",      "claims123",      UserType.CLAIMS_MANAGER, "David",  "Park"),
+    ("admin@testco.com",        "admin123",        UserType.TENANT_ADMIN,   "Alice",  "Admin"),
+    ("agent@testco.com",        "agent123",        UserType.AGENT,          "Bob",    "Agent"),
+    ("underwriter@testco.com",  "underwriter123",  UserType.UNDERWRITER,    "Rachel", "Green"),
+    ("claims@testco.com",       "claims123",       UserType.CLAIMS_MANAGER, "David",  "Park"),
 ]:
     if not db.query(User).filter(User.email == email, User.tenant_id == TID).first():
         db.add(User(id=uid(), tenant_id=TID, email=email, password_hash=hp(pw),
                     first_name=fn, last_name=ln, user_type=utype, status=UserStatus.ACTIVE))
+db.flush()
 
 ADMIN_ID = db.query(User).filter(User.email == "admin@testco.com").first().id
 db.flush()
@@ -271,9 +274,9 @@ app1, members1 = make_application(
     GOLD, ApplicationStatus.ISSUED,
     "James Wilson", "james.wilson@email.com",
     [
-        ("James",  "Wilson", "1982-06-15", "self",   "M"),
-        ("Sarah",  "Wilson", "1984-09-22", "spouse", "F"),
-        ("Emma",   "Wilson", "2016-03-10", "child",  "F"),
+        ("James",  "Wilson", "1982-06-15", "self",   "male"),
+        ("Sarah",  "Wilson", "1984-09-22", "spouse", "female"),
+        ("Emma",   "Wilson", "2016-03-10", "child",  "female"),
     ],
 )
 pol1 = make_policy(app1, GOLD, dt(2026, 1, 1), dt(2027, 1, 1))
@@ -316,7 +319,7 @@ make_customer_account(pol1, "james.wilson@email.com", "Customer123", "James", "W
 app2, members2 = make_application(
     SILVER, ApplicationStatus.ISSUED,
     "Michael Chen", "michael.chen@email.com",
-    [("Michael", "Chen", "1990-11-30", "self", "M")],
+    [("Michael", "Chen", "1990-11-30", "self", "male")],
 )
 pol2 = make_policy(app2, SILVER, dt(2026, 2, 1), dt(2027, 2, 1))
 make_payment(pol2, 900.00, PaymentMethod.CARD, dt(2026, 2, 1), "CARD-2026-0201")
@@ -337,7 +340,7 @@ make_customer_account(pol2, "michael.chen@email.com", "Customer123", "Michael", 
 app3, members3 = make_application(
     ESSENTIAL, ApplicationStatus.ISSUED,
     "Emily Rodriguez", "emily.rodriguez@email.com",
-    [("Emily", "Rodriguez", "1995-07-04", "self", "F")],
+    [("Emily", "Rodriguez", "1995-07-04", "self", "female")],
 )
 pol3 = make_policy(app3, ESSENTIAL, dt(2026, 3, 1), dt(2027, 3, 1))
 make_payment(pol3, 480.00, PaymentMethod.UPI, dt(2026, 3, 1), "UPI-2026-0301")
@@ -365,30 +368,30 @@ make_application(
     GOLD, ApplicationStatus.UNDER_REVIEW,
     "Robert Kim", "robert.kim@email.com",
     [
-        ("Robert", "Kim",  "1978-04-20", "self",   "M"),
-        ("Grace",  "Kim",  "1980-08-15", "spouse", "F"),
-        ("Liam",   "Kim",  "2012-01-25", "child",  "M"),
-        ("Ava",    "Kim",  "2015-06-30", "child",  "F"),
+        ("Robert", "Kim",  "1978-04-20", "self",   "male"),
+        ("Grace",  "Kim",  "1980-08-15", "spouse", "female"),
+        ("Liam",   "Kim",  "2012-01-25", "child",  "male"),
+        ("Ava",    "Kim",  "2015-06-30", "child",  "female"),
     ],
 )
 make_application(
     SILVER, ApplicationStatus.SUBMITTED,
     "Linda Park", "linda.park@email.com",
-    [("Linda", "Park", "1988-12-01", "self", "F")],
+    [("Linda", "Park", "1988-12-01", "self", "female")],
     source="self_service",
 )
 make_application(
     ESSENTIAL, ApplicationStatus.SUBMITTED,
     "David Brown", "david.brown@email.com",
-    [("David", "Brown", "2000-05-17", "self", "M")],
+    [("David", "Brown", "2000-05-17", "self", "male")],
     source="self_service",
 )
 make_application(
     GOLD, ApplicationStatus.APPROVED,
     "Priya Sharma", "priya.sharma@email.com",
     [
-        ("Priya",  "Sharma", "1985-03-28", "self",   "F"),
-        ("Arjun",  "Sharma", "1983-10-14", "spouse", "M"),
+        ("Priya",  "Sharma", "1985-03-28", "self",   "female"),
+        ("Arjun",  "Sharma", "1983-10-14", "spouse", "male"),
     ],
 )
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 
 class PaymentCreate(BaseModel):
-    amount: Decimal = Field(..., gt=0, decimal_places=2)
+    amount: Decimal = Field(..., gt=0)
     method: str = "bank_transfer"
     reference: Optional[str] = None
     notes: Optional[str] = None

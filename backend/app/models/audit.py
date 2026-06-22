@@ -17,7 +17,7 @@ class AuditLog(Base):
     entity_type: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     action: Mapped[str] = mapped_column(
-        Enum(AuditAction, name="audit_action_enum"),
+        Enum(AuditAction, name="audit_action_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     old_values: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
