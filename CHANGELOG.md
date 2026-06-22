@@ -5,6 +5,75 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-23
+
+### Added — Phase 1–2: UAE Compliance, AML, Govt Checks, PDF Generation, Enhanced Staff Portal
+
+#### Backend — Database Migrations (0014–0026)
+- **0016 market_config**: Tenant-level configurable key/value store (VAT rate, PSP fee, AML thresholds, etc.)
+- **0017 premium_loadings**: Underwriter/BMI/Other/TPA/Broker/Insurer loadings per application/member
+- **0018 commission_configs**: Configurable insurer/broker/TPA commission percentages per plan/broker
+- **0019 application UAE fields**: `aml_status`, `aml_risk_score`, `govt_check_status`, `marital_status`, `occupation`, `employer_name`, `trn`, `sponsor_type`, `existing_health_insurance`, `is_diplomatic_passport`, `is_eid_under_process`, `remarks` (JSONB), `premium_breakdown` (JSONB)
+- **0020 member medical questionnaire**: `medical_questionnaire` (JSONB, 14-question), `pregnancy_questionnaire`, `height_cm`, `weight_kg`
+- **0021 aml_records**: AML check results (PEP, sanctions, risk score, transaction monitoring)
+- **0022 govt_verification_records**: ICP/DHA/OFAC/UN/UAE Cabinet 74 check results with override support
+- **0023 str_records**: Suspicious Transaction Reports with dual-authorisation workflow
+- **0024 notification_records**: In-portal staff notifications
+- **0025**: Extended `user_type_enum` with `compliance_officer` and `finance` values
+- **0026**: Added `updated_at` to compliance tables (AML records, govt checks, notifications, loadings)
+
+#### Backend — Services
+- **`aml_service.py`**: 9-factor risk scoring engine (all weights configurable via `market_config`), PEP check stub, sanctions check, transaction monitoring, AML hold/clear workflow, auto-STR creation at CRITICAL risk
+- **`govt_verification_service.py`**: ICP Emirates ID verification, DHA health check, OFAC/UN/UAE Cabinet 74 sanctions — all stubbed with `GOVT_API_MOCK=true`, Redis cache (90-day TTL), retry+fallback
+- **`payment_gateway_service.py`**: Network International UAE gateway stub (`PAYMENT_GATEWAY_MOCK=true`), real mode with timeout/retry
+- **`pdf_service.py`**: WeasyPrint + Jinja2 PDF generation for MAF, KYC, ToB, Policy Schedule, Credit Note, Tax Invoice, Receipt Voucher
+
+#### Backend — API Endpoints
+- **`/aml`**: `GET /alerts`, `GET /records/{id}`, `POST /{id}/clear`, `POST /{id}/hold`, `GET /str`, `POST /str`, `POST /str/{id}/approve`, `POST /str/{id}/file`
+- **`/govt-checks`**: `POST /applications/{id}/verify-icp`, `POST /applications/{id}/verify-sanctions`, `GET /`, `GET /applications/{id}`, `POST /{record_id}/override`, `POST /bulk-retry`
+- **`/notifications`**: `GET /` (with 60s polling), `POST /{id}/read`, `POST /read-all`
+- **`/applications`** extended: `GET/POST /loadings`, `DELETE /loadings/{id}`, `GET/POST /remarks`, `POST /recalculate`
+- **`/documents`**: 7 PDF generation endpoints (MAF, KYC, ToB, Schedule, Credit Note, Tax Invoice, Receipt)
+- **`/reports`** extended: 7 new export endpoints with CSV + PDF format — `policies-issued`, `commission-statement`, `underwriter`, `aml-screening`, `govt-verification`, `str-log`, `dha-fines`
+
+#### Backend — Schemas & Models
+- `ApplicationCreate`/`ApplicationRead`: full UAE fields + AML/Govt status + premium breakdown
+- `MemberCreate`/`MemberRead`: Emirates ID validation (784-YYYY-NNNNNNN-C), medical questionnaire, UAE identity fields
+- Compliance models (`PremiumLoading`, `CommissionConfig`, `AmlRecord`, `GovtVerificationRecord`, `StrRecord`, `NotificationRecord`) all in `app/models/compliance.py`
+- `MarketConfig` model for tenant-level configuration
+
+#### Frontend
+- **Layout**: Notification bell with unread badge (60s polling), AML and Govt Checks nav items
+- **Dashboard**: AML Flagged + Govt Check Pending KPI cards linking to compliance pages
+- **ApplicationsPage**: 
+  - AML/Govt Check status badges in table
+  - Filter bar (status, AML status, Govt check status) + search
+  - Quick filter chips (Pending Review, AML Hold, AML Flagged, Govt Check Pending, Issued)
+  - 4-tab application detail: Details, Loadings, Remarks, Documents
+  - Underwriter loadings panel with add/remove
+  - Threaded remarks with role badges (Underwriter/Broker/CO/System)
+  - Document downloads (MAF, KYC, ToB PDFs)
+  - UAE member fields: Emirates ID (validated), nationality, visa type, height/weight, occupation
+  - Premium breakdown panel with recalculate button
+- **PoliciesPage**:
+  - AML status badge in table
+  - Filter bar + quick chips (Active, AML Hold, AML Flagged, Expired)
+  - 4-tab policy detail: Personal Details, Signed Docs, Other Documents, Remarks
+  - PDF downloads: Policy Schedule, Credit Note, Tax Invoice, Receipt Voucher
+- **AmlDashboardPage** (`/aml`): Open alerts table, clear-hold modal with mandatory justification, STR pipeline with dual-authorisation (CO submits → Admin approves → CO files)
+- **GovtChecksPage** (`/govt-checks`): Verification records table, override modal, bulk retry with checkbox selection
+- **ReportsPage**: 7 downloadable reports with CSV/PDF buttons and date range filter
+
+#### Seed Data
+- `scripts/seed_phase1.py`: 10 Adamjee plans (Workers Network, Silk Road, Pearl, Super Restricted, Emerald, Green, Restricted Network, Silver Classic, Silver Premium, General Network), 5 staff users, market_config (VAT 5%, AML thresholds, quote validity), commission configs
+
+### Fixed
+- `from app.config import get_settings` → `from config import get_settings` in AML, Govt Verification, Payment Gateway services (module path mismatch)
+- Missing `updated_at` columns in `aml_records`, `govt_verification_records`, `notification_records`, `premium_loadings` (migration 0026)
+- `error` prop rendering in `ApplicationDetailModal` was passing `Error` object as React node instead of string
+
+---
+
 ## [Unreleased] — 2026-05-24
 
 ### Added — Adamjee UAE Buying Journey
