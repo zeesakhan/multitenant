@@ -9,6 +9,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - **LAN hosting**: Both backend (port 8001) and frontend (port 5173) now bind to `0.0.0.0` — accessible from any device on the local network at `http://192.168.1.175:5173` (staff portal), `http://192.168.1.175:8001/docs` (API docs)
+- **`start_backend.sh`**: Convenience script that starts uvicorn on `0.0.0.0:8001` with `DYLD_LIBRARY_PATH` set via `env` (required for WeasyPrint PDF on macOS Apple Silicon)
+- **`start_frontend.sh`**: Convenience script that starts Vite dev server on `0.0.0.0:5173`
 - **WeasyPrint fix**: Upgraded from 62.3 → 63.0 (resolved `AttributeError: 'super' has no attribute 'transform'`); added `DYLD_LIBRARY_PATH=/opt/homebrew/lib` to Makefile dev-backend target for macOS Apple Silicon PDF library resolution
 - **Full backend UAT pass**: All 36 endpoints verified HTTP 200 — including all 7 PDF generation endpoints (MAF, KYC, ToB, Policy Schedule, Credit Note, Tax Invoice, Receipt Voucher) and all 9 report endpoints (CSV + PDF export)
 - **Full frontend UAT pass**: 10 pages verified via Playwright headless browser — Dashboard, Applications, Policies, AML, Govt Checks, Reports, Claims, Products, Buy Portal, Login

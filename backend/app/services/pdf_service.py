@@ -26,6 +26,29 @@ _jinja_env = Environment(
 _jinja_env.globals["now"] = datetime.now
 
 
+def _preload_macos_libs() -> None:
+    """Pre-load gobject/pango via ctypes so WeasyPrint finds them on macOS Apple Silicon."""
+    import ctypes, platform
+    if platform.system() != "Darwin":
+        return
+    homebrew = "/opt/homebrew/lib"
+    for lib in [
+        "libgobject-2.0.0.dylib", "libglib-2.0.0.dylib",
+        "libpango-1.0.0.dylib", "libpangoft2-1.0.0.dylib",
+        "libharfbuzz.0.dylib", "libfontconfig.1.dylib",
+        "libcairo.2.dylib", "libcairo-gobject.2.dylib",
+    ]:
+        path = f"{homebrew}/{lib}"
+        if os.path.exists(path):
+            try:
+                ctypes.CDLL(path)
+            except OSError:
+                pass
+
+
+_preload_macos_libs()
+
+
 def render_pdf(template_name: str, context: dict) -> bytes:
     """Render a Jinja2 HTML template to PDF bytes via WeasyPrint."""
     context.setdefault("generation_date", date.today().strftime("%d %b %Y"))
@@ -34,7 +57,7 @@ def render_pdf(template_name: str, context: dict) -> bytes:
         from weasyprint import HTML, CSS
     except Exception as exc:
         raise RuntimeError(
-            "WeasyPrint not available. Ensure DYLD_LIBRARY_PATH=/opt/homebrew/lib is set."
+            "WeasyPrint not available. Run: brew install pango cairo"
         ) from exc
 
     template = _jinja_env.get_template(template_name)
