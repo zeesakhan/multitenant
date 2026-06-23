@@ -28,7 +28,7 @@ dev:
 	@$(MAKE) -j2 dev-backend dev-frontend
 
 dev-backend:
-	cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && DYLD_LIBRARY_PATH=/opt/homebrew/lib venv/bin/uvicorn main:app --reload --host 0.0.0.0 --port 8001
 
 dev-frontend:
 	cd frontend && npm run dev
