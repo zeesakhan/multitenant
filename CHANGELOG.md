@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 2026-06-23 (Phase 3 — Demo Ready, LAN Accessible, Full UAT Pass)
+
+### Added
+- **LAN hosting**: Both backend (port 8001) and frontend (port 5173) now bind to `0.0.0.0` — accessible from any device on the local network at `http://192.168.1.175:5173` (staff portal), `http://192.168.1.175:8001/docs` (API docs)
+- **WeasyPrint fix**: Upgraded from 62.3 → 63.0 (resolved `AttributeError: 'super' has no attribute 'transform'`); added `DYLD_LIBRARY_PATH=/opt/homebrew/lib` to Makefile dev-backend target for macOS Apple Silicon PDF library resolution
+- **Full backend UAT pass**: All 36 endpoints verified HTTP 200 — including all 7 PDF generation endpoints (MAF, KYC, ToB, Policy Schedule, Credit Note, Tax Invoice, Receipt Voucher) and all 9 report endpoints (CSV + PDF export)
+- **Full frontend UAT pass**: 10 pages verified via Playwright headless browser — Dashboard, Applications, Policies, AML, Govt Checks, Reports, Claims, Products, Buy Portal, Login
+
+### Fixed
+- **AED template literals**: 4 pages had broken `AED AED {fmt(...)}` string literals (from prior sed substitution) — fixed in `ReportsPage`, `ClaimsPage`, `PortalPolicyPage`, `PortalClaimsPage`
+- **AML Dashboard display**: `holdAlerts` filter used `a.status` (application status) instead of `a.aml_status` — now correctly shows 2 open alerts with customer names and risk scores (67.50 HIGH / 38.75 MEDIUM)
+- **Makefile port**: Changed `dev-backend` target from port 8000 → 8001 to match Vite proxy config
+
+---
+
 ## [Unreleased] — 2026-06-23 (Phase 3 — Demo Preparation, UAT, Currency Fix, AED Compliance)
 
 ### Added
