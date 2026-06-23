@@ -1,14 +1,46 @@
 """Seed demo data using raw SQL for reliability."""
-import sys, uuid, json
+import sys, uuid, json, os, re
 from decimal import Decimal
 from datetime import datetime, date, timedelta, timezone
 import psycopg2
 
-conn = psycopg2.connect(database='health_insurance', user='zeeshankhan')
+# Read DATABASE_URL from .env if available, otherwise fall back to current OS user
+def _get_db_conn():
+    env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+    db_url = None
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                m = re.match(r'^DATABASE_URL\s*=\s*(.+)', line.strip())
+                if m:
+                    db_url = m.group(1).strip()
+                    break
+    if db_url:
+        return psycopg2.connect(db_url)
+    # Fallback: connect as current OS user
+    return psycopg2.connect(database='health_insurance', user=os.getenv('USER', os.getenv('LOGNAME', '')))
+
+conn = _get_db_conn()
 cur = conn.cursor()
 
-TENANT_ID = '84595acc-7561-4684-9aba-7a14795ec81d'
-ADMIN_USER = '3b2f52f3-17bb-4219-ba0b-d37b3d193bfb'
+# Lookup tenant by code (works on any machine after main.py seed)
+cur.execute("SELECT id FROM tenants WHERE code = 'ADAMJEE' LIMIT 1")
+row = cur.fetchone()
+if not row:
+    print("ERROR: Adamjee tenant not found. Run: venv/bin/python main.py  first.")
+    sys.exit(1)
+TENANT_ID = row[0]
+
+# Lookup admin user
+cur.execute("SELECT id FROM users WHERE email = 'admin@adamjee.ae' AND tenant_id = %s LIMIT 1", (TENANT_ID,))
+row = cur.fetchone()
+if not row:
+    print("ERROR: admin@adamjee.ae not found. Run: venv/bin/python main.py  first.")
+    sys.exit(1)
+ADMIN_USER = row[0]
+
+print(f"Tenant: {TENANT_ID}")
+print(f"Admin:  {ADMIN_USER}")
 
 uid = lambda: str(uuid.uuid4())
 ago = lambda n: (datetime.now(timezone.utc) - timedelta(days=n)).isoformat()
