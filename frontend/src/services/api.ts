@@ -141,6 +141,15 @@ export const documentsApi = {
   generateMaf: (applicationId: string) => api.post(`/documents/applications/${applicationId}/generate-maf`, {}, { responseType: 'blob' }),
   generateKyc: (applicationId: string) => api.post(`/documents/applications/${applicationId}/generate-kyc`, {}, { responseType: 'blob' }),
   generateTob: (applicationId: string) => api.post(`/documents/applications/${applicationId}/generate-tob`, {}, { responseType: 'blob' }),
+  uploadSigned: (applicationId: string, file: File, docType: 'maf' | 'kyc' | 'tob') => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('document_type', 'application_form')
+    fd.append('entity_type', 'application')
+    fd.append('entity_id', applicationId)
+    fd.append('doc_type', docType)
+    return api.post('/documents/upload', fd)
+  },
 }
 
 export const paymentsApi = {
