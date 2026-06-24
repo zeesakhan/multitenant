@@ -150,6 +150,11 @@ export const documentsApi = {
     fd.append('doc_type', docType)
     return api.post('/documents/upload', fd)
   },
+  ocrDocument: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return api.post('/uae-buy/ocr', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
 }
 
 export const paymentsApi = {

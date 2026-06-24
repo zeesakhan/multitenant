@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import api, { applicationsApi, membersApi, documentsApi } from '../services/api'
 import { useToast } from '../context/ToastContext'
+import DocumentScanner, { type ScanResult } from '../components/DocumentScanner'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -642,6 +643,30 @@ function Step3({ form, setForm }: { form: WizardForm; setForm: (f: WizardForm) =
 
           {openIdx === i && (
             <div className="px-5 pb-5 space-y-5 border-t border-gray-100">
+              {/* OCR document scan — auto-fills identity fields below */}
+              <div className="pt-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Auto-fill from Document</p>
+                <DocumentScanner
+                  label={`Scan passport or Emirates ID for ${m.first_name ? `${m.first_name} ${m.last_name}` : `Member ${i + 1}`}`}
+                  onResult={(result: ScanResult) => {
+                    if (result.first_name) setMember(i, 'first_name', result.first_name)
+                    if (result.last_name) setMember(i, 'last_name', result.last_name)
+                    if (result.date_of_birth) setMember(i, 'date_of_birth', result.date_of_birth)
+                    if (result.gender) {
+                      const g = result.gender.toUpperCase()
+                      setMember(i, 'gender', g === 'M' ? 'male' : g === 'F' ? 'female' : result.gender as Gender)
+                    }
+                    if (result.passport_number) setMember(i, 'passport_number', result.passport_number)
+                    if (result.emirates_id) setMember(i, 'emirates_id', result.emirates_id)
+                    if (result.document_expiry) setMember(i, 'document_expiry', result.document_expiry)
+                    if (result.nationality) {
+                      const match = NATIONALITIES.find(n => n.toLowerCase() === result.nationality!.toLowerCase())
+                      if (match) setMember(i, 'nationality', match)
+                    }
+                  }}
+                />
+              </div>
+
               {/* UAE identity */}
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4 mb-3">Identity Documents</p>

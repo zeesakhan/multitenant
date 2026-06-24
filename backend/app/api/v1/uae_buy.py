@@ -305,6 +305,21 @@ def _plan_highlights(name: str) -> list[str]:
     return base
 
 
+import logging as _logging
+_ocr_logger = _logging.getLogger(__name__)
+
+# Fix 1: Check Tesseract availability at import time.
+# If pytesseract/tesseract is not installed the endpoint returns a clear
+# ocr_success=False response instead of crashing with a 500.
+_TESSERACT_AVAILABLE = False
+try:
+    import pytesseract as _pytesseract_check
+    _pytesseract_check.get_tesseract_version()
+    _TESSERACT_AVAILABLE = True
+except Exception as _te:
+    _ocr_logger.warning("Tesseract OCR not available: %s — OCR endpoint will return empty results", _te)
+
+
 @router.post("/ocr")
 async def ocr_document(file: UploadFile = File(...)):
     """
@@ -318,19 +333,35 @@ async def ocr_document(file: UploadFile = File(...)):
             detail="Unsupported file type. Upload JPEG, PNG, or PDF.",
         )
 
+    if not _TESSERACT_AVAILABLE:
+        empty = {
+            "ocr_success": False, "ocr_partial": False, "document_type": "passport",
+            "first_name": "", "last_name": "", "date_of_birth": "", "nationality": "",
+            "passport_number": "", "emirates_id": "", "document_expiry": "",
+            "gender": "", "place_of_birth": "",
+        }
+        return api_response(
+            data=empty,
+            message="OCR engine not available on this server. Please fill in details manually.",
+        )
+
     contents = await file.read()
     extracted = _run_ocr(contents, file.content_type, file.filename or "")
 
-    return api_response(
-        data=extracted,
-        message="Document scanned successfully." if extracted.get("ocr_success") else
-                "Could not auto-read document. Please fill in details manually.",
-    )
+    if extracted.get("ocr_success"):
+        msg = ("Partially scanned — some fields filled. Please verify all details."
+               if extracted.get("ocr_partial") else
+               "Document scanned successfully. Please verify the details below.")
+    else:
+        msg = "Could not auto-read document. Please fill in details manually."
+
+    return api_response(data=extracted, message=msg)
 
 
 def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
     result = {
         "ocr_success": False,
+        "ocr_partial": False,
         "document_type": "passport",
         "first_name": "",
         "last_name": "",
@@ -352,35 +383,50 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
         if "pdf" in content_type:
             return result
 
-        from PIL import ImageOps
+        from PIL import ImageOps, ImageStat
         img = Image.open(io.BytesIO(data))
         img = ImageOps.exif_transpose(img)  # honour EXIF rotation (mobile camera uploads)
 
-        # Preprocess: grayscale, boost contrast, sharpen, upscale
+        # Preprocess: grayscale → upscale → Fix 2: adaptive contrast
         img = img.convert("L")
-        img = ImageEnhance.Contrast(img).enhance(2.0)
-        img = ImageEnhance.Sharpness(img).enhance(2.0)
-        img = img.filter(ImageFilter.MedianFilter(size=1))
         w, h = img.size
         if max(w, h) < 1500:
             scale = 1500 / max(w, h)
             img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
         w, h = img.size
 
+        # Fix 2: Only boost contrast when the image is low-contrast.
+        # High-std images (clear scans) are oversaturated by a fixed 2.0× boost.
+        # Use PIL ImageStat (no numpy required) to measure pixel spread.
+        _std = ImageStat.Stat(img).stddev[0]
+        if _std < 60:
+            img = ImageEnhance.Contrast(img).enhance(2.0)
+            img = ImageEnhance.Sharpness(img).enhance(2.0)
+        elif _std < 90:
+            img = ImageEnhance.Contrast(img).enhance(1.4)
+        img = img.filter(ImageFilter.MedianFilter(size=1))
+
         # General OCR (full image) for visible text fields
         text_block = pytesseract.image_to_string(img, config="--oem 1 --psm 6")
 
-        # ── Emirates ID: 784-XXXX-XXXXXXX-X ──────────────────────────────
-        eid_pattern = r'784[-\s]?\d{4}[-\s]?\d{7}[-\s]?\d'
-        eid_match = re.search(eid_pattern, text_block)
-        if eid_match:
-            digits_only = re.sub(r'[^0-9]', '', eid_match.group())
-            if len(digits_only) == 15:
-                result["emirates_id"] = (
-                    f"{digits_only[:3]}-{digits_only[3:7]}"
-                    f"-{digits_only[7:14]}-{digits_only[14]}"
-                )
-                result["document_type"] = "emirates_id"
+        # Fix 3: Multi-pattern Emirates ID extraction with normalization
+        # Try patterns from most specific to most lenient; accept first match.
+        _EID_PATTERNS = [
+            r'784[-\s]?\d{4}[-\s]?\d{7}[-\s]?\d',   # standard: optional - or space
+            r'784\d{12}',                               # 15 digits no separators
+            r'7\s*8\s*4[\d\s\-]{11,17}\d',            # OCR adds stray spaces
+        ]
+        for _ep in _EID_PATTERNS:
+            eid_match = re.search(_ep, text_block)
+            if eid_match:
+                digits_only = re.sub(r'[^0-9]', '', eid_match.group())
+                if len(digits_only) == 15:
+                    result["emirates_id"] = (
+                        f"{digits_only[:3]}-{digits_only[3:7]}"
+                        f"-{digits_only[7:14]}-{digits_only[14]}"
+                    )
+                    result["document_type"] = "emirates_id"
+                    break
 
         # ── Passport MRZ — whitelist scan on full image ───────────────────
         # A character whitelist stops tesseract guessing '<' as 'c'/'e'.
@@ -588,11 +634,17 @@ def _run_ocr(data: bytes, content_type: str, filename: str) -> dict:
         result["ocr_success"] = bool(
             result["first_name"] or result["passport_number"] or result["emirates_id"]
         )
+        # Fix 4: ocr_partial=True when OCR succeeded but key identity fields are missing.
+        if result["ocr_success"]:
+            _key_fields = [result["first_name"], result["last_name"],
+                           result["passport_number"] or result["emirates_id"]]
+            result["ocr_partial"] = not all(_key_fields)
 
     except ImportError:
-        pass
-    except Exception:
-        pass
+        # Fix 5: Structured logging — devs can diagnose without impacting user response
+        _ocr_logger.warning("pytesseract or PIL not installed — OCR unavailable")
+    except Exception as _exc:
+        _ocr_logger.warning("OCR extraction failed: %s", _exc, exc_info=True)
 
     return result
 
