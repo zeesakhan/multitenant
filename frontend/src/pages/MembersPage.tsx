@@ -74,7 +74,7 @@ export default function MembersPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-xs font-bold text-primary-700">
-                      {member.first_name[0]}{member.last_name[0]}
+                      {member.first_name?.[0] ?? '?'}{member.last_name?.[0] ?? ''}
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{member.first_name} {member.last_name}</p>

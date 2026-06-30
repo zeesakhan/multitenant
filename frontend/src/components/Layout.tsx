@@ -10,22 +10,33 @@ import { clearAuth, useAuth } from '../store/authStore'
 import { authApi, notificationsApi } from '../services/api'
 import clsx from 'clsx'
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/tenants', label: 'Tenants', icon: Building2 },
-  { to: '/users', label: 'Users', icon: Users },
-  { to: '/products', label: 'Products', icon: Package },
-  { to: '/quotations', label: 'Quotations', icon: ClipboardList },
-  { to: '/new-policy', label: 'New Policy', icon: FilePlus },
-  { to: '/applications', label: 'Applications', icon: FileText },
-  { to: '/policies', label: 'Policies', icon: ShieldCheck },
-  { to: '/members', label: 'Members', icon: UserCheck },
-  { to: '/claims', label: 'Claims', icon: AlertCircle },
-  { to: '/payments', label: 'Payments', icon: CreditCard },
-  { to: '/reports', label: 'Reports', icon: BarChart2 },
-  { to: '/aml', label: 'AML', icon: ShieldAlert },
-  { to: '/govt-checks', label: 'Govt Checks', icon: Globe },
+type NavItem = { to: string; label: string; icon: React.ElementType; roles?: string[] }
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { to: '/',             label: 'Dashboard',    icon: LayoutDashboard },
+  // Admin-only
+  { to: '/tenants',      label: 'Tenants',      icon: Building2,   roles: ['super_admin'] },
+  { to: '/users',        label: 'Users',        icon: Users,        roles: ['super_admin', 'tenant_admin'] },
+  { to: '/products',     label: 'Products',     icon: Package,      roles: ['super_admin', 'tenant_admin'] },
+  // Sales / broker / agent
+  { to: '/new-policy',   label: 'New Policy',   icon: FilePlus,     roles: ['tenant_admin', 'broker', 'agent'] },
+  { to: '/quotations',   label: 'Quotations',   icon: ClipboardList, roles: ['tenant_admin', 'broker', 'agent'] },
+  { to: '/applications', label: 'Applications', icon: FileText,     roles: ['tenant_admin', 'broker', 'agent', 'underwriter'] },
+  { to: '/policies',     label: 'Policies',     icon: ShieldCheck,  roles: ['tenant_admin', 'broker', 'agent', 'underwriter', 'compliance_officer', 'finance'] },
+  { to: '/members',      label: 'Members',      icon: UserCheck,    roles: ['tenant_admin', 'broker', 'agent', 'underwriter', 'compliance_officer'] },
+  { to: '/claims',       label: 'Claims',       icon: AlertCircle,  roles: ['tenant_admin', 'broker', 'agent', 'underwriter'] },
+  { to: '/payments',     label: 'Payments',     icon: CreditCard,   roles: ['tenant_admin', 'broker', 'agent', 'finance'] },
+  { to: '/reports',      label: 'Reports',      icon: BarChart2,    roles: ['tenant_admin', 'broker', 'agent', 'underwriter', 'compliance_officer', 'finance'] },
+  // Compliance
+  { to: '/aml',          label: 'AML',          icon: ShieldAlert,  roles: ['tenant_admin', 'compliance_officer'] },
+  { to: '/govt-checks',  label: 'Govt Checks',  icon: Globe,        roles: ['tenant_admin', 'compliance_officer'] },
 ]
+
+function getNavItems(userType: string | undefined): NavItem[] {
+  if (!userType) return [{ to: '/', label: 'Dashboard', icon: LayoutDashboard }]
+  const role = (typeof userType === 'string' ? userType : '').toLowerCase()
+  return ALL_NAV_ITEMS.filter(item => !item.roles || item.roles.includes(role))
+}
 
 interface NotificationItem {
   id: string
@@ -151,7 +162,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map(({ to, label, icon: Icon }) => {
+          {getNavItems(user?.user_type).map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
             return (
               <Link

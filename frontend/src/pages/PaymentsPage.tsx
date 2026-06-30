@@ -5,6 +5,8 @@ import { paymentsApi } from '../services/api'
 import { Payment } from '../types'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
+import ErrorMessage from '../components/ErrorMessage'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const METHOD_LABELS: Record<string, string> = {
   bank_transfer: 'Bank Transfer',
@@ -19,9 +21,10 @@ const METHOD_LABELS: Record<string, string> = {
 export default function PaymentsPage() {
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['all-payments', page],
     queryFn: () => paymentsApi.listAll(page).then(r => r.data),
+    retry: false,
   })
 
   const payments: Payment[] = data?.data ?? []
@@ -30,6 +33,9 @@ export default function PaymentsPage() {
   const totalCollected = payments
     .filter(p => p.status === 'success')
     .reduce((sum, p) => sum + parseFloat(p.amount), 0)
+
+  if (isLoading) return <div className="p-8"><LoadingSpinner /></div>
+  if (isError) return <div className="p-8"><ErrorMessage message="Failed to load payments. Please try again." /></div>
 
   return (
     <div className="p-6">

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   ChevronDown, ChevronUp, Plus, X, Check, Loader2, AlertCircle,
   FileText, Download, Upload, Eye, MessageSquare, CheckCircle,
@@ -429,7 +429,7 @@ function Step2({ form, setForm, onPlanSelected }: {
 
   const set = (k: keyof WizardForm, v: unknown) => setForm({ ...form, [k]: v })
 
-  useState(() => {
+  useEffect(() => {
     api.get('/buy/products')
       .then(r => {
         const products: any[] = r.data.data ?? []
@@ -440,7 +440,7 @@ function Step2({ form, setForm, onPlanSelected }: {
       })
       .catch(() => setError('Failed to load plans. Please refresh.'))
       .finally(() => setLoading(false))
-  })
+  }, [])
 
   const filteredPlans = plans.filter(p => {
     if (form.cover_amount) {
@@ -761,7 +761,7 @@ function Step4({ form, onStepBack }: { form: WizardForm; onStepBack: () => void 
       .catch(() => {})
   }
 
-  useState(() => { loadRemarks() })
+  useEffect(() => { loadRemarks() }, [])
 
   const addRemark = async () => {
     if (!remarkText.trim()) return
