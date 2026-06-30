@@ -162,15 +162,15 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
-function Field({ label, value, onChange, type = 'text', placeholder, required }: {
+function Field({ label, value, onChange, type = 'text', placeholder, required, min, max }: {
   label: string; value: string; onChange: (v: string) => void
-  type?: string; placeholder?: string; required?: boolean
+  type?: string; placeholder?: string; required?: boolean; min?: number; max?: number
 }) {
   return (
     <div>
       <label className="label">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
       <input className="input" type={type} value={value}
-        onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+        onChange={e => onChange(e.target.value)} placeholder={placeholder} min={min} max={max} />
     </div>
   )
 }
@@ -252,8 +252,8 @@ function MemberBasicFields({ member, onChange }: {
       <SelectField label="Nationality" value={member.nationality} onChange={v => onChange('nationality', v)}
         options={NATIONALITIES} required />
       <div className="grid grid-cols-2 gap-2">
-        <Field label="Height (cm)" value={member.height_cm} onChange={v => onChange('height_cm', v)} type="number" placeholder="170" />
-        <Field label="Weight (kg)" value={member.weight_kg} onChange={v => onChange('weight_kg', v)} type="number" placeholder="70" />
+        <Field label="Height (cm)" value={member.height_cm} onChange={v => onChange('height_cm', v)} type="number" placeholder="170" min={1} max={300} />
+        <Field label="Weight (kg)" value={member.weight_kg} onChange={v => onChange('weight_kg', v)} type="number" placeholder="70" min={1} max={300} />
       </div>
     </div>
   )
@@ -983,9 +983,19 @@ export default function NewPolicyPage() {
   }
 
   const validateStep3 = (): string | null => {
-    for (const m of form.members) {
+    for (let i = 0; i < form.members.length; i++) {
+      const m = form.members[i]
+      const label = i === 0 ? 'principal member' : `family member ${i}`
       if (m.emirates_id && !EID_PATTERN.test(m.emirates_id)) {
         return `Emirates ID format invalid for ${m.first_name}. Use: 784-YYYY-NNNNNNN-C`
+      }
+      if (m.height_cm) {
+        const h = Number(m.height_cm)
+        if (isNaN(h) || h <= 0 || h > 300) return `Height must be between 1 and 300 cm for ${label}.`
+      }
+      if (m.weight_kg) {
+        const w = Number(m.weight_kg)
+        if (isNaN(w) || w <= 0 || w > 300) return `Weight must be between 1 and 300 kg for ${label}.`
       }
     }
     return null
