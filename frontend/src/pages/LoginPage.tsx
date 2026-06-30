@@ -9,11 +9,11 @@ type Step = 'tenant' | 'credentials'
 export default function LoginPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('tenant')
-  const [tenantCode, setTenantCode] = useState('TESTCO')
+  const [tenantCode, setTenantCode] = useState('ADAMJEE')
   const [tenantId, setTenantId] = useState('')
   const [tenantName, setTenantName] = useState('')
-  const [email, setEmail] = useState('admin@testco.com')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('admin@adamjee.ae')
+  const [password, setPassword] = useState('adamjee123')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -88,12 +88,12 @@ export default function LoginPage() {
                     className="input uppercase font-mono tracking-widest"
                     value={tenantCode}
                     onChange={(e) => setTenantCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. TESTCO"
+                    placeholder="e.g. ADAMJEE"
                     required
                     autoFocus
                   />
                   <p className="mt-1 text-xs text-gray-400">
-                    Demo: <strong>TESTCO</strong> (tenant admin) · <strong>SYSTEM</strong> (super admin)
+                    Demo: <strong>ADAMJEE</strong> (Adamjee Insurance) · <strong>TESTCO</strong> (SafeLife Insurance)
                   </p>
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center py-2.5" disabled={loading}>
@@ -154,8 +154,8 @@ export default function LoginPage() {
                 </div>
               </form>
               <p className="mt-4 text-center text-xs text-gray-400">
-                TESTCO: admin@testco.com / admin123<br />
-                SYSTEM: superadmin@system.com / super123
+                ADAMJEE: admin@adamjee.ae / adamjee123<br />
+                Broker: broker@adamjee.ae · Underwriter: underwriter@adamjee.ae
               </p>
             </>
           )}
