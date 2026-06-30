@@ -43,10 +43,12 @@ class ApplicationService:
         if not tenant:
             raise ValueError(f"Tenant {tenant_id} not found")
 
-        last_app = self.db.query(Application).filter(
-            Application.tenant_id == tenant_id
-        ).order_by(Application.created_at.desc()).first()
-        sequence = 1 if not last_app else int(last_app.application_number.split("-")[-1]) + 1
+        ap_prefix = f"AP-{tenant.code.upper()}-"
+        existing_count = self.db.query(Application).filter(
+            Application.tenant_id == tenant_id,
+            Application.application_number.like(f"{ap_prefix}%")
+        ).count()
+        sequence = existing_count + 1
 
         application_number = generate_reference_number("AP", tenant.code, sequence)
         total_premium = Decimal(str(quote.total_premium)) if quote else Decimal("0.00")
